@@ -1,1 +1,1 @@
-web: gunicorn app:create_app()
+web: flask --app wsgi.py db upgrade && gunicorn "wsgi:app" --bind 0.0.0.0:$PORT
