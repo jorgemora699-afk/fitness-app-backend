@@ -1,0 +1,154 @@
+from domain.entities.body_record import BodyRecord
+from domain.entities.routine import Routine, Exercise
+from domain.entities.user import User
+from infrastructure.database.db import db
+from datetime import date
+
+class AddBodyRecordUseCase:
+    def execute(self, user_id, data):
+        record = BodyRecord(
+            user_id=user_id,
+            weight=data['weight'],
+            body_fat=data.get('body_fat'),
+            muscle_mass=data.get('muscle_mass'),
+            recorded_at=date.fromisoformat(data['recorded_at']) if data.get('recorded_at') else date.today()
+        )
+        db.session.add(record)
+        db.session.commit()
+        return {'message': 'Registro agregado', 'record': record.to_dict()}, 201
+
+
+class GetBodyProgressUseCase:
+    def execute(self, user_id):
+        records = BodyRecord.query.filter_by(user_id=user_id).order_by(
+            BodyRecord.recorded_at.asc()
+        ).all()
+
+        if not records:
+            return {'records': [], 'summary': None}, 200
+
+        weights = [r.weight for r in records]
+        summary = {
+            'initial_weight': weights[0],
+            'current_weight': weights[-1],
+            'difference': round(weights[-1] - weights[0], 2),
+            'min_weight': min(weights),
+            'max_weight': max(weights),
+            'total_records': len(records)
+        }
+
+        return {
+            'records': [r.to_dict() for r in records],
+            'summary': summary
+        }, 200
+
+
+class GetExerciseProgressUseCase:
+    def execute(self, user_id, exercise_name):
+        # Buscar todas las rutinas del usuario
+        routines = Routine.query.filter_by(user_id=user_id).order_by(
+            Routine.date.asc()
+        ).all()
+
+        progress = []
+        for routine in routines:
+            exercises = Exercise.query.filter(
+                Exercise.routine_id == routine.id,
+                Exercise.name.ilike(f'%{exercise_name}%')
+            ).all()
+
+            for ex in exercises:
+                if ex.weight or ex.reps:
+                    volume = (ex.sets or 0) * (ex.reps or 0) * (ex.weight or 0)
+                    progress.append({
+                        'date': routine.date.isoformat(),
+                        'exercise': ex.to_dict(),
+                        'volume': round(volume, 2)
+                    })
+
+        if not progress:
+            return {'error': f'No hay datos para el ejercicio: {exercise_name}'}, 404
+
+        # Resumen
+        weights = [p['exercise']['weight'] for p in progress if p['exercise']['weight']]
+        summary = {
+            'exercise_name': exercise_name,
+            'total_sessions': len(progress),
+            'initial_weight': weights[0] if weights else None,
+            'current_weight': weights[-1] if weights else None,
+            'max_weight': max(weights) if weights else None,
+            'improvement': round(weights[-1] - weights[0], 2) if len(weights) > 1 else 0
+        }
+
+        return {
+            'progress': progress,
+            'summary': summary
+        }, 200
+
+
+class GetUserProgressAsTrainerUseCase:
+    def execute(self, user_id, trainer_id):
+        user = User.query.filter_by(id=user_id, trainer_id=trainer_id).first()
+        if not user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        # Progreso de peso corporal
+        records = BodyRecord.query.filter_by(user_id=user_id).order_by(
+            BodyRecord.recorded_at.asc()
+        ).all()
+
+        weights = [r.weight for r in records]
+        body_summary = None
+        if weights:
+            body_summary = {
+                'initial_weight': weights[0],
+                'current_weight': weights[-1],
+                'difference': round(weights[-1] - weights[0], 2),
+                'total_records': len(records)
+            }
+
+        # Asistencia del mes actual
+        today = date.today()
+        routines_this_month = Routine.query.filter(
+            Routine.user_id == user_id,
+            db.extract('year', Routine.date) == today.year,
+            db.extract('month', Routine.date) == today.month
+        ).count()
+
+        return {
+            'user': user.to_dict(),
+            'body_progress': {
+                'records': [r.to_dict() for r in records],
+                'summary': body_summary
+            },
+            'routines_this_month': routines_this_month
+        }, 200
+
+
+class GetIMCUseCase:
+    def execute(self, user_id):
+        user = User.query.get(user_id)
+        if not user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        if not user.weight or not user.height:
+            return {'error': 'El usuario no tiene peso y altura registrados'}, 400
+
+        height_m = user.height / 100 if user.height > 3 else user.height
+        imc = round(user.weight / (height_m ** 2), 2)
+
+        if imc < 18.5:
+            category = 'Bajo peso'
+        elif imc < 25:
+            category = 'Peso normal'
+        elif imc < 30:
+            category = 'Sobrepeso'
+        else:
+            category = 'Obesidad'
+
+        return {
+            'imc': imc,
+            'category': category,
+            'weight': user.weight,
+            'height': user.height
+        }, 200
