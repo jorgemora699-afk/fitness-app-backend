@@ -11,6 +11,15 @@ class RegisterUserUseCase:
         if existing:
             return {'error': 'El correo ya está registrado'}, 400
 
+        # Validar código del entrenador
+        trainer_code = data.get('trainer_code')
+        if not trainer_code:
+            return {'error': 'El código del entrenador es requerido'}, 400
+
+        trainer = Trainer.query.filter_by(trainer_code=trainer_code.upper()).first()
+        if not trainer:
+            return {'error': 'Código de entrenador inválido'}, 404
+
         user = User(
             name=data['name'],
             last_name=data['last_name'],
@@ -20,7 +29,8 @@ class RegisterUserUseCase:
             age=data.get('age'),
             weight=data.get('weight'),
             height=data.get('height'),
-            goal=data.get('goal')
+            goal=data.get('goal'),
+            trainer_id=trainer.id  # asignar automáticamente
         )
         db.session.add(user)
         db.session.commit()

@@ -12,8 +12,8 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 @auth_bp.route('/register', methods=['POST'])
 def register_user():
     data = request.get_json()
-    if not data or not all(k in data for k in ['name', 'last_name', 'email', 'password', 'phone']):
-        return jsonify({'error': 'Faltan campos requeridos: name, last_name, email, password, phone'}), 400
+    if not data or not all(k in data for k in ['name', 'last_name', 'email', 'password', 'phone', 'trainer_code']):
+        return jsonify({'error': 'Faltan campos requeridos: name, last_name, email, password, phone, trainer_code'}), 400
 
     result, status = RegisterUserUseCase().execute(data)
     if status == 201:
