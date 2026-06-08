@@ -58,3 +58,25 @@ def create_trainer():
         token = create_access_token(identity=str(result['trainer']['id']), additional_claims={'role': 'trainer'})
         result['token'] = token
     return jsonify(result), status
+
+@auth_bp.route('/trainers/me', methods=['PUT'])
+@jwt_required()
+def update_trainer_profile():
+    from flask_jwt_extended import get_jwt
+    claims = get_jwt()
+    if claims.get('role') != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+
+    trainer_id = int(get_jwt_identity())
+    from domain.entities.trainer import Trainer
+    trainer = Trainer.query.get(trainer_id)
+    if not trainer:
+        return jsonify({'error': 'Entrenador no encontrado'}), 404
+
+    data = request.get_json()
+    trainer.name = data.get('name', trainer.name)
+    trainer.phone = data.get('phone', trainer.phone)
+
+    from infrastructure.database.db import db
+    db.session.commit()
+    return jsonify({'trainer': trainer.to_dict()}), 200
