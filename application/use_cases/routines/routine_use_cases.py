@@ -116,3 +116,59 @@ class DeleteRoutineUseCase:
         db.session.delete(routine)
         db.session.commit()
         return {'message': 'Rutina eliminada'}, 200
+
+class UpdateRoutineUseCase:
+    def execute(self, routine_id, trainer_id, data):
+        routine = Routine.query.filter_by(
+            id=routine_id,
+            trainer_id=trainer_id
+        ).first()
+        if not routine:
+            return {'error': 'Rutina no encontrada'}, 404
+
+        routine.name = data.get('name', routine.name)
+        routine.notes = data.get('notes', routine.notes)
+        routine.date = date.fromisoformat(data['date']) if data.get('date') else routine.date
+
+        db.session.commit()
+        return {'message': 'Rutina actualizada', 'routine': routine.to_dict()}, 200
+
+
+class AddExerciseToRoutineUseCase:
+    def execute(self, routine_id, trainer_id, data):
+        routine = Routine.query.filter_by(
+            id=routine_id,
+            trainer_id=trainer_id
+        ).first()
+        if not routine:
+            return {'error': 'Rutina no encontrada'}, 404
+
+        exercise = Exercise(
+            routine_id=routine_id,
+            name=data['name'],
+            sets=data.get('sets'),
+            reps=data.get('reps'),
+            weight=data.get('weight'),
+            notes=data.get('notes')
+        )
+        db.session.add(exercise)
+        db.session.commit()
+        return {'message': 'Ejercicio agregado', 'exercise': exercise.to_dict()}, 201
+
+
+class DeleteExerciseUseCase:
+    def execute(self, exercise_id, trainer_id):
+        exercise = Exercise.query.get(exercise_id)
+        if not exercise:
+            return {'error': 'Ejercicio no encontrado'}, 404
+
+        routine = Routine.query.filter_by(
+            id=exercise.routine_id,
+            trainer_id=trainer_id
+        ).first()
+        if not routine:
+            return {'error': 'No autorizado'}, 403
+
+        db.session.delete(exercise)
+        db.session.commit()
+        return {'message': 'Ejercicio eliminado'}, 200

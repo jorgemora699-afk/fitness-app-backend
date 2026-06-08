@@ -6,7 +6,10 @@ from application.use_cases.routines.routine_use_cases import (
     GetRoutineByDateUseCase,
     UpdateExerciseUseCase,
     UpdateExerciseAsTrainerUseCase,
-    DeleteRoutineUseCase
+    DeleteRoutineUseCase,
+    UpdateRoutineUseCase,
+    AddExerciseToRoutineUseCase,
+    DeleteExerciseUseCase
 )
 
 routine_bp = Blueprint('routines', __name__, url_prefix='/api/routines')
@@ -75,4 +78,38 @@ def delete_routine(routine_id):
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
     trainer_id = int(get_jwt_identity())
     result, status = DeleteRoutineUseCase().execute(routine_id, trainer_id)
+    return jsonify(result), status
+
+# ── Entrenador: editar rutina (nombre, notas, fecha) ──
+@routine_bp.route('/<int:routine_id>', methods=['PUT'])
+@jwt_required()
+def update_routine(routine_id):
+    if get_role() != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    data = request.get_json()
+    result, status = UpdateRoutineUseCase().execute(routine_id, trainer_id, data)
+    return jsonify(result), status
+
+# ── Entrenador: agregar ejercicio a rutina existente ──
+@routine_bp.route('/<int:routine_id>/exercises', methods=['POST'])
+@jwt_required()
+def add_exercise(routine_id):
+    if get_role() != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    data = request.get_json()
+    if not data.get('name'):
+        return jsonify({'error': 'El nombre del ejercicio es requerido'}), 400
+    result, status = AddExerciseToRoutineUseCase().execute(routine_id, trainer_id, data)
+    return jsonify(result), status
+
+# ── Entrenador: eliminar ejercicio de rutina ──
+@routine_bp.route('/exercise/<int:exercise_id>', methods=['DELETE'])
+@jwt_required()
+def delete_exercise(exercise_id):
+    if get_role() != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    result, status = DeleteExerciseUseCase().execute(exercise_id, trainer_id)
     return jsonify(result), status
