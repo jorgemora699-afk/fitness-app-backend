@@ -9,7 +9,8 @@ from application.use_cases.routines.routine_use_cases import (
     DeleteRoutineUseCase,
     UpdateRoutineUseCase,
     AddExerciseToRoutineUseCase,
-    DeleteExerciseUseCase
+    DeleteExerciseUseCase,
+    CopyRoutineToUserUseCase
 )
 
 routine_bp = Blueprint('routines', __name__, url_prefix='/api/routines')
@@ -112,4 +113,15 @@ def delete_exercise(exercise_id):
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
     trainer_id = int(get_jwt_identity())
     result, status = DeleteExerciseUseCase().execute(exercise_id, trainer_id)
+    return jsonify(result), status
+
+# ── Entrenador: copiar rutina a otro usuario ──
+@routine_bp.route('/<int:routine_id>/copy', methods=['POST'])
+@jwt_required()
+def copy_routine(routine_id):
+    if get_role() != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    data = request.get_json()
+    result, status = CopyRoutineToUserUseCase().execute(routine_id, trainer_id, data)
     return jsonify(result), status

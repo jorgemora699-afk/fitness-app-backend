@@ -172,3 +172,55 @@ class DeleteExerciseUseCase:
         db.session.delete(exercise)
         db.session.commit()
         return {'message': 'Ejercicio eliminado'}, 200
+
+class CopyRoutineToUserUseCase:
+    def execute(self, routine_id, trainer_id, data):
+        # Verificar que la rutina pertenece al entrenador
+        routine = Routine.query.filter_by(
+            id=routine_id,
+            trainer_id=trainer_id
+        ).first()
+        if not routine:
+            return {'error': 'Rutina no encontrada'}, 404
+
+        target_user_id = data.get('user_id')
+        target_date = data.get('date')
+
+        if not target_user_id or not target_date:
+            return {'error': 'user_id y date son requeridos'}, 400
+
+        # Verificar que el usuario destino pertenece al entrenador
+        target_user = User.query.filter_by(
+            id=target_user_id,
+            trainer_id=trainer_id
+        ).first()
+        if not target_user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        # Crear nueva rutina con los mismos ejercicios
+        new_routine = Routine(
+            user_id=target_user_id,
+            trainer_id=trainer_id,
+            date=date.fromisoformat(target_date),
+            name=routine.name,
+            notes=routine.notes
+        )
+        db.session.add(new_routine)
+        db.session.flush()
+
+        for ex in routine.exercises:
+            new_exercise = Exercise(
+                routine_id=new_routine.id,
+                name=ex.name,
+                sets=ex.sets,
+                reps=ex.reps,
+                weight=ex.weight,
+                notes=ex.notes
+            )
+            db.session.add(new_exercise)
+
+        db.session.commit()
+        return {
+            'message': f'Rutina copiada a {target_user.name} {target_user.last_name}',
+            'routine': new_routine.to_dict()
+        }, 201
