@@ -41,6 +41,27 @@ class GetTrainerScheduleUseCase:
             })
 
         return {'schedules': result}, 200
+    
+class UpdateScheduleUseCase:
+    def execute(self, schedule_id, trainer_id, data):
+        schedule = Schedule.query.filter_by(
+            id=schedule_id,
+            trainer_id=trainer_id
+        ).first()
+        if not schedule:
+            return {'error': 'Horario no encontrado'}, 404
+
+        if 'date' in data:
+            schedule.date = date.fromisoformat(data['date'])
+        if 'start_time' in data:
+            schedule.start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+        if 'end_time' in data:
+            schedule.end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+        if 'routine_id' in data:
+            schedule.routine_id = data['routine_id']
+
+        db.session.commit()
+        return {'message': 'Horario actualizado', 'schedule': schedule.to_dict()}, 200
 
 
 class ConfirmScheduleUseCase:

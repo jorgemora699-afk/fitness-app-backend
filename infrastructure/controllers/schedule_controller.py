@@ -7,7 +7,8 @@ from application.use_cases.schedule.schedule_use_cases import (
     DeleteScheduleUseCase,
     SendWhatsAppConfirmationUseCase,
     CancelScheduleAsUserUseCase,
-    CancelScheduleAsTrainerUseCase
+    CancelScheduleAsTrainerUseCase,
+    UpdateScheduleUseCase
 )
 
 schedule_bp = Blueprint('schedules', __name__, url_prefix='/api/schedules')
@@ -37,6 +38,16 @@ def get_schedule():
     trainer_id = int(get_jwt_identity())
     date_str = request.args.get('date')
     result, status = GetTrainerScheduleUseCase().execute(trainer_id, date_str)
+    return jsonify(result), status
+
+@schedule_bp.route('/<int:schedule_id>', methods=['PUT'])
+@jwt_required()
+def update_schedule(schedule_id):
+    if get_role() != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    data = request.get_json()
+    result, status = UpdateScheduleUseCase().execute(schedule_id, trainer_id, data)
     return jsonify(result), status
 
 # ── Entrenador: confirmar asistencia manualmente ──
