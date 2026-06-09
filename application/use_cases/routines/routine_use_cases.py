@@ -104,7 +104,7 @@ class DeleteRoutineUseCase:
             return {'error': 'Rutina no encontrada'}, 404
         
 
-        Exercise.query.filter_by(routine_id=routine_id).delete()
+        Exercise.query.filter_by(routine_id=routine_id).delete(synchronize_session=False)
         db.session.delete(routine)
         db.session.commit()
         return {'message': 'Rutina eliminada'}, 200
