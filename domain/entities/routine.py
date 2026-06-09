@@ -7,7 +7,6 @@ class Routine(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainers.id'), nullable=False)
-    date = db.Column(db.Date, nullable=False)
     name = db.Column(db.String(150), nullable=False)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -19,7 +18,6 @@ class Routine(db.Model):
             'id': self.id,
             'user_id': self.user_id,
             'trainer_id': self.trainer_id,
-            'date': self.date.isoformat(),
             'name': self.name,
             'notes': self.notes,
             'exercises': [e.to_dict() for e in self.exercises],

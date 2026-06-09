@@ -1,7 +1,6 @@
 from domain.entities.routine import Routine, Exercise
 from domain.entities.user import User
 from infrastructure.database.db import db
-from datetime import date
 
 class CreateRoutineUseCase:
     def execute(self, trainer_id, data):
@@ -12,12 +11,11 @@ class CreateRoutineUseCase:
         routine = Routine(
             user_id=data['user_id'],
             trainer_id=trainer_id,
-            date=date.fromisoformat(data['date']),
             name=data['name'],
             notes=data.get('notes')
         )
         db.session.add(routine)
-        db.session.flush()  # para obtener el id antes del commit
+        db.session.flush()
 
         for ex in data.get('exercises', []):
             exercise = Exercise(
@@ -41,22 +39,15 @@ class GetRoutinesByUserUseCase:
             return {'error': 'Usuario no encontrado'}, 404
 
         routines = Routine.query.filter_by(user_id=user_id).order_by(
-            Routine.date.desc()
+            Routine.created_at.desc()
         ).all()
         return {'routines': [r.to_dict() for r in routines]}, 200
 
 
 class GetRoutineByDateUseCase:
     def execute(self, user_id, date_str):
-        routine_date = date.fromisoformat(date_str)
-        routine = Routine.query.filter_by(
-            user_id=user_id,
-            date=routine_date
-        ).first()
-
-        if not routine:
-            return {'error': 'No hay rutina para este día'}, 404
-        return {'routine': routine.to_dict()}, 200
+        # Ya no aplica, pero se deja para no romper imports
+        return {'error': 'No disponible'}, 404
 
 
 class UpdateExerciseUseCase:
@@ -65,7 +56,6 @@ class UpdateExerciseUseCase:
         if not exercise:
             return {'error': 'Ejercicio no encontrado'}, 404
 
-        # Verificar que el ejercicio pertenece a una rutina del usuario
         routine = Routine.query.filter_by(
             id=exercise.routine_id,
             user_id=user_id
@@ -117,6 +107,7 @@ class DeleteRoutineUseCase:
         db.session.commit()
         return {'message': 'Rutina eliminada'}, 200
 
+
 class UpdateRoutineUseCase:
     def execute(self, routine_id, trainer_id, data):
         routine = Routine.query.filter_by(
@@ -128,7 +119,6 @@ class UpdateRoutineUseCase:
 
         routine.name = data.get('name', routine.name)
         routine.notes = data.get('notes', routine.notes)
-        routine.date = date.fromisoformat(data['date']) if data.get('date') else routine.date
 
         db.session.commit()
         return {'message': 'Rutina actualizada', 'routine': routine.to_dict()}, 200
@@ -173,9 +163,9 @@ class DeleteExerciseUseCase:
         db.session.commit()
         return {'message': 'Ejercicio eliminado'}, 200
 
+
 class CopyRoutineToUserUseCase:
     def execute(self, routine_id, trainer_id, data):
-        # Verificar que la rutina pertenece al entrenador
         routine = Routine.query.filter_by(
             id=routine_id,
             trainer_id=trainer_id
@@ -184,12 +174,9 @@ class CopyRoutineToUserUseCase:
             return {'error': 'Rutina no encontrada'}, 404
 
         target_user_id = data.get('user_id')
-        target_date = data.get('date')
+        if not target_user_id:
+            return {'error': 'user_id es requerido'}, 400
 
-        if not target_user_id or not target_date:
-            return {'error': 'user_id y date son requeridos'}, 400
-
-        # Verificar que el usuario destino pertenece al entrenador
         target_user = User.query.filter_by(
             id=target_user_id,
             trainer_id=trainer_id
@@ -197,11 +184,9 @@ class CopyRoutineToUserUseCase:
         if not target_user:
             return {'error': 'Usuario no encontrado'}, 404
 
-        # Crear nueva rutina con los mismos ejercicios
         new_routine = Routine(
             user_id=target_user_id,
             trainer_id=trainer_id,
-            date=date.fromisoformat(target_date),
             name=routine.name,
             notes=routine.notes
         )
