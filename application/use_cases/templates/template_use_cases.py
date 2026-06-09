@@ -2,7 +2,7 @@ from domain.entities.routine_template import RoutineTemplate, TemplateExercise
 from domain.entities.routine import Routine, Exercise
 from domain.entities.user import User
 from infrastructure.database.db import db
-from datetime import date
+
 
 class CreateTemplateUseCase:
     def execute(self, trainer_id, data):
@@ -104,12 +104,10 @@ class AssignTemplateToUserUseCase:
         if not template:
             return {'error': 'Plantilla no encontrada'}, 404
 
-        # Verificar que todos los usuarios pertenecen al entrenador
         user_ids = data.get('user_ids', [])
-        dates = data.get('dates', [])
 
-        if not user_ids or not dates:
-            return {'error': 'Se requieren user_ids y dates'}, 400
+        if not user_ids:
+            return {'error': 'Se requieren user_ids'}, 400
 
         routines_created = []
 
@@ -118,41 +116,30 @@ class AssignTemplateToUserUseCase:
             if not user:
                 continue
 
-            for date_str in dates:
-                # Verificar si ya existe rutina en esa fecha para ese usuario
-                existing = Routine.query.filter_by(
-                    user_id=user_id,
-                    date=date.fromisoformat(date_str)
-                ).first()
-                if existing:
-                    continue
+            routine = Routine(
+                user_id=user_id,
+                trainer_id=trainer_id,
+                name=template.name,
+                notes=template.description
+            )
+            db.session.add(routine)
+            db.session.flush()
 
-                routine = Routine(
-                    user_id=user_id,
-                    trainer_id=trainer_id,
-                    date=date.fromisoformat(date_str),
-                    name=template.name,
-                    notes=template.description
+            for tex in template.exercises:
+                exercise = Exercise(
+                    routine_id=routine.id,
+                    name=tex.name,
+                    sets=tex.sets,
+                    reps=tex.reps,
+                    weight=tex.weight,
+                    notes=tex.notes
                 )
-                db.session.add(routine)
-                db.session.flush()
+                db.session.add(exercise)
 
-                for tex in template.exercises:
-                    exercise = Exercise(
-                        routine_id=routine.id,
-                        name=tex.name,
-                        sets=tex.sets,
-                        reps=tex.reps,
-                        weight=tex.weight,
-                        notes=tex.notes
-                    )
-                    db.session.add(exercise)
-
-                routines_created.append({
-                    'user': user.to_dict(),
-                    'date': date_str,
-                    'routine': routine.to_dict()
-                })
+            routines_created.append({
+                'user': user.to_dict(),
+                'routine': routine.to_dict()
+            })
 
         db.session.commit()
         return {
