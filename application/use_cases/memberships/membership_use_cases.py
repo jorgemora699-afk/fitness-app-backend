@@ -111,6 +111,13 @@ class GetMonthlyFinancesUseCase:
 
         total = sum(m.amount or 0 for m in memberships)
 
+        payments = []
+        for m in memberships:
+            user = User.query.get(m.user_id)
+            payment_data = m.to_dict()
+            payment_data['user_name'] = f"{user.name} {user.last_name}" if user else f"Usuario #{m.user_id}"
+            payments.append(payment_data)
+
         return {
             'year': year,
             'month': month,
