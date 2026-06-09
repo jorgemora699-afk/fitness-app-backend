@@ -15,6 +15,7 @@ class Schedule(db.Model):
     cancel_reason = db.Column(db.String(255), nullable=True)
     cancelled_by = db.Column(db.String(20), nullable=True)  # 'user' o 'trainer'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=True)
 
     def to_dict(self):
         return {
@@ -28,5 +29,6 @@ class Schedule(db.Model):
             'cancelled': self.cancelled,
             'cancel_reason': self.cancel_reason,
             'cancelled_by': self.cancelled_by,
-            'created_at': self.created_at.isoformat()
+            'created_at': self.created_at.isoformat(),
+            'routine_id': self.routine_id,
         }

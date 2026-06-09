@@ -16,6 +16,7 @@ class CreateScheduleUseCase:
             date=date.fromisoformat(data['date']),
             start_time=datetime.strptime(data['start_time'], '%H:%M').time(),
             end_time=datetime.strptime(data['end_time'], '%H:%M').time(),
+            routine_id=data.get('routine_id'),
         )
         db.session.add(schedule)
         db.session.commit()
