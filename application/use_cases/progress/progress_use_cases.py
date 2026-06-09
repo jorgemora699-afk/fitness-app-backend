@@ -45,9 +45,8 @@ class GetBodyProgressUseCase:
 
 class GetExerciseProgressUseCase:
     def execute(self, user_id, exercise_name):
-        # Buscar todas las rutinas del usuario
         routines = Routine.query.filter_by(user_id=user_id).order_by(
-            Routine.date.asc()
+            Routine.created_at.asc()
         ).all()
 
         progress = []
@@ -61,7 +60,7 @@ class GetExerciseProgressUseCase:
                 if ex.weight or ex.reps:
                     volume = (ex.sets or 0) * (ex.reps or 0) * (ex.weight or 0)
                     progress.append({
-                        'date': routine.date.isoformat(),
+                        'date': routine.created_at.isoformat(),
                         'exercise': ex.to_dict(),
                         'volume': round(volume, 2)
                     })
@@ -69,7 +68,6 @@ class GetExerciseProgressUseCase:
         if not progress:
             return {'error': f'No hay datos para el ejercicio: {exercise_name}'}, 404
 
-        # Resumen
         weights = [p['exercise']['weight'] for p in progress if p['exercise']['weight']]
         summary = {
             'exercise_name': exercise_name,
@@ -92,7 +90,6 @@ class GetUserProgressAsTrainerUseCase:
         if not user:
             return {'error': 'Usuario no encontrado'}, 404
 
-        # Progreso de peso corporal
         records = BodyRecord.query.filter_by(user_id=user_id).order_by(
             BodyRecord.recorded_at.asc()
         ).all()
@@ -107,13 +104,7 @@ class GetUserProgressAsTrainerUseCase:
                 'total_records': len(records)
             }
 
-        # Asistencia del mes actual
-        today = date.today()
-        routines_this_month = Routine.query.filter(
-            Routine.user_id == user_id,
-            db.extract('year', Routine.date) == today.year,
-            db.extract('month', Routine.date) == today.month
-        ).count()
+        total_routines = Routine.query.filter_by(user_id=user_id).count()
 
         return {
             'user': user.to_dict(),
@@ -121,7 +112,7 @@ class GetUserProgressAsTrainerUseCase:
                 'records': [r.to_dict() for r in records],
                 'summary': body_summary
             },
-            'routines_this_month': routines_this_month
+            'routines_this_month': total_routines
         }, 200
 
 
