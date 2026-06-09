@@ -122,6 +122,6 @@ class GetMonthlyFinancesUseCase:
             'year': year,
             'month': month,
             'total_collected': total,
-            'payments': [m.to_dict() for m in memberships],
+            'payments': payments,
             'count': len(memberships)
         }, 200
