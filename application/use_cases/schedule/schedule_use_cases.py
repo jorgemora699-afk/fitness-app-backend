@@ -94,6 +94,11 @@ class CreateScheduleUseCase:
 
         db.session.commit()
 
+        if len(created) == 0:
+            return {
+                'error': 'Todos los horarios seleccionados ya existen'
+            }, 400
+
         return {
             'message': f'{len(created)} horarios creados'
         }, 201
