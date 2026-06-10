@@ -30,6 +30,8 @@ class UpdateUserUseCase:
         user.weight = data.get('weight', user.weight)
         user.height = data.get('height', user.height)
         user.goal = data.get('goal', user.goal)
+        user.body_fat = data.get('body_fat', user.body_fat)
+        user.muscle_mass = data.get('muscle_mass', user.muscle_mass)
 
         db.session.commit()
         return {'message': 'Usuario actualizado', 'user': user.to_dict()}, 200

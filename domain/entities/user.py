@@ -15,6 +15,8 @@ class User(db.Model):
     weight = db.Column(db.Float, nullable=True)
     height = db.Column(db.Float, nullable=True)
     goal = db.Column(db.String(255), nullable=True)
+    body_fat = db.Column(db.Float, nullable=True)    # % grasa corporal
+    muscle_mass = db.Column(db.Float, nullable=True)  # % masa muscular
     profile_photo = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainers.id'), nullable=True)
@@ -35,6 +37,8 @@ class User(db.Model):
             'weight': self.weight,
             'height': self.height,
             'goal': self.goal,
+            'body_fat': self.body_fat,
+            'muscle_mass': self.muscle_mass,
             'profile_photo': self.profile_photo,
             'is_active': self.is_active,
             'trainer_id': self.trainer_id,
