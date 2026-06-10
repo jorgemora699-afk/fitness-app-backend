@@ -1,6 +1,7 @@
 from domain.entities.routine import Routine, Exercise
 from domain.entities.user import User
 from infrastructure.database.db import db
+from domain.entities.exercise_log import ExerciseLog
 
 class CreateRoutineUseCase:
     def execute(self, trainer_id, data):
@@ -211,3 +212,99 @@ class CopyRoutineToUserUseCase:
             'message': f'Rutina copiada a {target_user.name} {target_user.last_name}',
             'routine': new_routine.to_dict()
         }, 201
+    
+
+class LogExerciseUseCase:
+    def execute(self, exercise_id, user_id, data):
+
+        exercise = Exercise.query.join(
+            Routine,
+            Exercise.routine_id == Routine.id
+        ).filter(
+            Exercise.id == exercise_id,
+            Routine.user_id == user_id
+        ).first()
+
+        if not exercise:
+            return {'error': 'Ejercicio no encontrado'}, 404
+
+        log = ExerciseLog(
+            exercise_id=exercise.id,
+            user_id=user_id,
+            completed_sets=data.get('completed_sets'),
+            completed_reps=data.get('completed_reps'),
+            completed_weight=data.get('completed_weight'),
+            notes=data.get('notes')
+        )
+
+        db.session.add(log)
+        db.session.commit()
+
+        return {
+            'message': 'Entrenamiento registrado',
+            'log': log.to_dict()
+        }, 201
+    
+class GetWorkoutHistoryUseCase:
+
+    def execute(self, user_id, trainer_id):
+
+        user = User.query.filter_by(
+            id=user_id,
+            trainer_id=trainer_id
+        ).first()
+
+        if not user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        logs = (
+            db.session.query(
+                ExerciseLog,
+                Exercise,
+                Routine
+            )
+            .join(
+                Exercise,
+                Exercise.id == ExerciseLog.exercise_id
+            )
+            .join(
+                Routine,
+                Routine.id == Exercise.routine_id
+            )
+            .filter(
+                ExerciseLog.user_id == user_id
+            )
+            .order_by(
+                ExerciseLog.created_at.desc()
+            )
+            .all()
+        )
+
+        history = []
+
+        for log, exercise, routine in logs:
+
+            history.append({
+                'id': log.id,
+                'date': log.created_at.isoformat(),
+                'routine_name': routine.name,
+
+                'exercise': {
+                    'id': exercise.id,
+                    'name': exercise.name,
+
+                    'planned_sets': exercise.sets,
+                    'planned_reps': exercise.reps,
+                    'planned_weight': exercise.weight,
+
+                    'completed_sets': log.completed_sets,
+                    'completed_reps': log.completed_reps,
+                    'completed_weight': log.completed_weight,
+
+                    'notes': log.notes
+                }
+            })
+
+        return {
+            'history': history
+        }, 200

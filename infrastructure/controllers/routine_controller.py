@@ -10,7 +10,9 @@ from application.use_cases.routines.routine_use_cases import (
     UpdateRoutineUseCase,
     AddExerciseToRoutineUseCase,
     DeleteExerciseUseCase,
-    CopyRoutineToUserUseCase
+    CopyRoutineToUserUseCase,
+    LogExerciseUseCase,
+    GetWorkoutHistoryUseCase
 )
 
 routine_bp = Blueprint('routines', __name__, url_prefix='/api/routines')
@@ -41,6 +43,24 @@ def get_routines_by_user(user_id):
     result, status = GetRoutinesByUserUseCase().execute(user_id, trainer_id)
     return jsonify(result), status
 
+@routine_bp.route('/user/<int:user_id>/history', methods=['GET'])
+@jwt_required()
+def get_workout_history(user_id):
+
+    if get_role() != 'trainer':
+        return jsonify({
+            'error': 'Acceso solo para entrenadores'
+        }), 403
+
+    trainer_id = int(get_jwt_identity())
+
+    result, status = GetWorkoutHistoryUseCase().execute(
+        user_id,
+        trainer_id
+    )
+
+    return jsonify(result), status
+
 # ── Usuario: ver su rutina del día ──
 @routine_bp.route('/me/day', methods=['GET'])
 @jwt_required()
@@ -68,6 +88,26 @@ def update_exercise(exercise_id):
         result, status = UpdateExerciseAsTrainerUseCase().execute(exercise_id, identity, data)
     else:
         return jsonify({'error': 'No autorizado'}), 403
+
+    return jsonify(result), status
+
+
+@routine_bp.route('/exercise/<int:exercise_id>/log', methods=['POST'])
+@jwt_required()
+def log_exercise(exercise_id):
+
+    if get_role() != 'user':
+        return jsonify({'error': 'Solo usuarios'}), 403
+
+    user_id = int(get_jwt_identity())
+
+    data = request.get_json()
+
+    result, status = LogExerciseUseCase().execute(
+        exercise_id,
+        user_id,
+        data
+    )
 
     return jsonify(result), status
 
