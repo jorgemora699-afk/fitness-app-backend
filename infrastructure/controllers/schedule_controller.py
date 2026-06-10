@@ -37,7 +37,8 @@ def get_schedule():
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
     trainer_id = int(get_jwt_identity())
     date_str = request.args.get('date')
-    result, status = GetTrainerScheduleUseCase().execute(trainer_id, date_str)
+    user_id = request.args.get('user_id', type=int)
+    result, status = GetTrainerScheduleUseCase().execute(trainer_id, date_str, user_id)
     return jsonify(result), status
 
 @schedule_bp.route('/<int:schedule_id>', methods=['PUT'])

@@ -105,11 +105,14 @@ class CreateScheduleUseCase:
 
 
 class GetTrainerScheduleUseCase:
-    def execute(self, trainer_id, date_str=None):
+    def execute(self, trainer_id, date_str=None, user_id=None):
         query = Schedule.query.filter_by(trainer_id=trainer_id)
 
         if date_str:
             query = query.filter_by(date=date.fromisoformat(date_str))
+
+        if user_id:
+            query = query.filter_by(user_id=user_id)
 
         schedules = query.order_by(Schedule.date, Schedule.start_time).all()
 
