@@ -33,6 +33,18 @@ class CreateScheduleUseCase:
 
         # Sin repetición
         if not repeat_days:
+
+            exists = Schedule.query.filter_by(
+                user_id=data['user_id'],
+                date=start_date,
+                start_time=start_time
+            ).first()
+
+            if exists:
+                return {
+                    'error': 'Este usuario ya tiene un entrenamiento programado en esa fecha y hora'
+                }, 400
+
             schedule = Schedule(
                 trainer_id=trainer_id,
                 user_id=data['user_id'],
@@ -47,28 +59,36 @@ class CreateScheduleUseCase:
 
         # Con repetición semanal
         else:
+
             end_date = date.fromisoformat(repeat_until)
 
             current = start_date
 
             while current <= end_date:
 
-                # Convierte los días del frontend al formato weekday() de Python
                 python_days = [(d - 1) % 7 for d in repeat_days]
 
                 if current.weekday() in python_days:
 
-                    schedule = Schedule(
-                        trainer_id=trainer_id,
+                    exists = Schedule.query.filter_by(
                         user_id=data['user_id'],
                         date=current,
-                        start_time=start_time,
-                        end_time=end_time,
-                        routine_id=data.get('routine_id'),
-                    )
+                        start_time=start_time
+                    ).first()
 
-                    db.session.add(schedule)
-                    created.append(schedule)
+                    if not exists:
+
+                        schedule = Schedule(
+                            trainer_id=trainer_id,
+                            user_id=data['user_id'],
+                            date=current,
+                            start_time=start_time,
+                            end_time=end_time,
+                            routine_id=data.get('routine_id'),
+                        )
+
+                        db.session.add(schedule)
+                        created.append(schedule)
 
                 current += timedelta(days=1)
 
@@ -104,20 +124,58 @@ class UpdateScheduleUseCase:
             id=schedule_id,
             trainer_id=trainer_id
         ).first()
+
         if not schedule:
             return {'error': 'Horario no encontrado'}, 404
 
+        new_date = (
+            date.fromisoformat(data['date'])
+            if 'date' in data
+            else schedule.date
+        )
+
+        new_start_time = (
+            datetime.strptime(
+                data['start_time'],
+                '%H:%M'
+            ).time()
+            if 'start_time' in data
+            else schedule.start_time
+        )
+
+        exists = Schedule.query.filter(
+            Schedule.id != schedule.id,
+            Schedule.user_id == schedule.user_id,
+            Schedule.date == new_date,
+            Schedule.start_time == new_start_time
+        ).first()
+
+        if exists:
+            return {
+                'error': 'Este usuario ya tiene un entrenamiento programado en esa fecha y hora'
+            }, 400
+
         if 'date' in data:
-            schedule.date = date.fromisoformat(data['date'])
+            schedule.date = new_date
+
         if 'start_time' in data:
-            schedule.start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+            schedule.start_time = new_start_time
+
         if 'end_time' in data:
-            schedule.end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+            schedule.end_time = datetime.strptime(
+                data['end_time'],
+                '%H:%M'
+            ).time()
+
         if 'routine_id' in data:
             schedule.routine_id = data['routine_id']
 
         db.session.commit()
-        return {'message': 'Horario actualizado', 'schedule': schedule.to_dict()}, 200
+
+        return {
+            'message': 'Horario actualizado',
+            'schedule': schedule.to_dict()
+        }, 200
 
 
 class ConfirmScheduleUseCase:
