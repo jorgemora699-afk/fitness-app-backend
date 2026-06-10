@@ -1,26 +1,82 @@
 from domain.entities.schedule import Schedule
 from domain.entities.user import User
 from infrastructure.database.db import db
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 import urllib.parse
 
 class CreateScheduleUseCase:
     def execute(self, trainer_id, data):
-        user = User.query.filter_by(id=data['user_id'], trainer_id=trainer_id).first()
+        user = User.query.filter_by(
+            id=data['user_id'],
+            trainer_id=trainer_id
+        ).first()
+
         if not user:
             return {'error': 'Usuario no encontrado'}, 404
 
-        schedule = Schedule(
-            trainer_id=trainer_id,
-            user_id=data['user_id'],
-            date=date.fromisoformat(data['date']),
-            start_time=datetime.strptime(data['start_time'], '%H:%M').time(),
-            end_time=datetime.strptime(data['end_time'], '%H:%M').time(),
-            routine_id=data.get('routine_id'),
-        )
-        db.session.add(schedule)
+        start_date = date.fromisoformat(data['date'])
+
+        repeat_days = data.get('repeat_days', [])
+        repeat_until = data.get('repeat_until')
+
+        start_time = datetime.strptime(
+            data['start_time'],
+            '%H:%M'
+        ).time()
+
+        end_time = datetime.strptime(
+            data['end_time'],
+            '%H:%M'
+        ).time()
+
+        created = []
+
+        # Sin repetición
+        if not repeat_days:
+            schedule = Schedule(
+                trainer_id=trainer_id,
+                user_id=data['user_id'],
+                date=start_date,
+                start_time=start_time,
+                end_time=end_time,
+                routine_id=data.get('routine_id'),
+            )
+
+            db.session.add(schedule)
+            created.append(schedule)
+
+        # Con repetición semanal
+        else:
+            end_date = date.fromisoformat(repeat_until)
+
+            current = start_date
+
+            while current <= end_date:
+
+                # Convierte los días del frontend al formato weekday() de Python
+                python_days = [(d - 1) % 7 for d in repeat_days]
+
+                if current.weekday() in python_days:
+
+                    schedule = Schedule(
+                        trainer_id=trainer_id,
+                        user_id=data['user_id'],
+                        date=current,
+                        start_time=start_time,
+                        end_time=end_time,
+                        routine_id=data.get('routine_id'),
+                    )
+
+                    db.session.add(schedule)
+                    created.append(schedule)
+
+                current += timedelta(days=1)
+
         db.session.commit()
-        return {'message': 'Horario creado', 'schedule': schedule.to_dict()}, 201
+
+        return {
+            'message': f'{len(created)} horarios creados'
+        }, 201
 
 
 class GetTrainerScheduleUseCase:
