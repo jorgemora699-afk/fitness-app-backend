@@ -9,6 +9,7 @@ from infrastructure.controllers.template_controller import template_bp
 from infrastructure.controllers.progress_controller import progress_bp
 from infrastructure.controllers.attendance_controller import attendance_bp
 from infrastructure.controllers.note_controller import note_bp
+from infrastructure.controllers.assigned_workout_controller import assigned_workout_bp
 
 def register_routes(app):
     app.register_blueprint(auth_bp)
@@ -22,3 +23,4 @@ def register_routes(app):
     app.register_blueprint(progress_bp)
     app.register_blueprint(attendance_bp)
     app.register_blueprint(note_bp)
+    app.register_blueprint(assigned_workout_bp)

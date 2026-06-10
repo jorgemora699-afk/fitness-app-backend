@@ -1,7 +1,7 @@
-from domain.entities.routine_template import RoutineTemplate, TemplateExercise
-from domain.entities.routine import Routine, Exercise
+from domain.entities.routine_template import RoutineTemplate, TemplateExercise, AssignedWorkout
 from domain.entities.user import User
 from infrastructure.database.db import db
+from datetime import datetime
 
 
 class CreateTemplateUseCase:
@@ -60,7 +60,6 @@ class UpdateTemplateUseCase:
         template.name = data.get('name', template.name)
         template.description = data.get('description', template.description)
 
-        # Si vienen ejercicios nuevos, reemplazar los anteriores
         if 'exercises' in data:
             for ex in template.exercises:
                 db.session.delete(ex)
@@ -105,44 +104,40 @@ class AssignTemplateToUserUseCase:
             return {'error': 'Plantilla no encontrada'}, 404
 
         user_ids = data.get('user_ids', [])
+        dates = data.get('dates', [])
 
-        if not user_ids:
-            return {'error': 'Se requieren user_ids'}, 400
+        if not user_ids or not dates:
+            return {'error': 'Se requieren user_ids y dates'}, 400
 
-        routines_created = []
+        users = User.query.filter(
+            User.id.in_(user_ids),
+            User.trainer_id == trainer_id
+        ).all()
+
+        if len(users) != len(user_ids):
+            return {'error': 'Uno o más usuarios no encontrados'}, 404
+
+        created = []
 
         for user_id in user_ids:
-            user = User.query.filter_by(id=user_id, trainer_id=trainer_id).first()
-            if not user:
-                continue
+            for date_str in dates:
+                try:
+                    assigned_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                except ValueError:
+                    return {'error': f'Fecha inválida: {date_str}'}, 400
 
-            routine = Routine(
-                user_id=user_id,
-                trainer_id=trainer_id,
-                name=template.name,
-                notes=template.description
-            )
-            db.session.add(routine)
-            db.session.flush()
-
-            for tex in template.exercises:
-                exercise = Exercise(
-                    routine_id=routine.id,
-                    name=tex.name,
-                    sets=tex.sets,
-                    reps=tex.reps,
-                    weight=tex.weight,
-                    notes=tex.notes
+                assigned = AssignedWorkout(
+                    user_id=user_id,
+                    template_id=template.id,
+                    assigned_date=assigned_date,
+                    status='pending'
                 )
-                db.session.add(exercise)
-
-            routines_created.append({
-                'user': user.to_dict(),
-                'routine': routine.to_dict()
-            })
+                db.session.add(assigned)
+                created.append(assigned)
 
         db.session.commit()
+
         return {
-            'message': f'{len(routines_created)} rutina(s) creada(s) desde la plantilla',
-            'routines': routines_created
+            'message': f'Plantilla asignada correctamente ({len(created)} registros creados)',
+            'assigned_workouts': [a.to_dict() for a in created]
         }, 201

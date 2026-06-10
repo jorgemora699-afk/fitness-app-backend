@@ -44,3 +44,50 @@ class TemplateExercise(db.Model):
             'weight': self.weight,
             'notes': self.notes
         }
+    
+class AssignedWorkout(db.Model):
+    __tablename__ = 'assigned_workouts'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    template_id = db.Column(db.Integer, db.ForeignKey('routine_templates.id'), nullable=False)
+    assigned_date = db.Column(db.Date, nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending, completed, skipped
+    completed_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    template = db.relationship('RoutineTemplate', lazy=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'template_id': self.template_id,
+            'template_name': self.template.name if self.template else None,
+            'assigned_date': self.assigned_date.isoformat(),
+            'status': self.status,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None
+        }
+
+
+class ExerciseLog(db.Model):
+    __tablename__ = 'exercise_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    assigned_workout_id = db.Column(db.Integer, db.ForeignKey('assigned_workouts.id'), nullable=False)
+    exercise_id = db.Column(db.Integer, db.ForeignKey('template_exercises.id'), nullable=False)
+    performed_sets = db.Column(db.Integer)
+    performed_reps = db.Column(db.Integer)
+    performed_weight = db.Column(db.Float)
+    performed_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'assigned_workout_id': self.assigned_workout_id,
+            'exercise_id': self.exercise_id,
+            'performed_sets': self.performed_sets,
+            'performed_reps': self.performed_reps,
+            'performed_weight': self.performed_weight,
+            'performed_at': self.performed_at.isoformat()
+        }
