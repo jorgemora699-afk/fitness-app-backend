@@ -27,6 +27,7 @@ def create_app():
     from domain.entities.attendance import Attendance
     from domain.entities.trainer_note import TrainerNote
     from domain.entities.routine_template import ExerciseLog
+    from domain.entities.WorkoutSession import WorkoutSession, SessionExerciseLog
 
     from infrastructure.web.routes import register_routes
     register_routes(app)

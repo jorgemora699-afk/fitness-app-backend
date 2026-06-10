@@ -1,6 +1,7 @@
 from domain.entities.routine import Routine, Exercise
 from domain.entities.user import User
 from infrastructure.database.db import db
+from domain.entities.routine_template import AssignedWorkout, ExerciseLog
 
 class CreateRoutineUseCase:
     def execute(self, trainer_id, data):
@@ -219,4 +220,50 @@ class LogExerciseUseCase:
 
 class GetWorkoutHistoryUseCase:
     def execute(self, user_id, trainer_id):
-        return {'error': 'Función no disponible temporalmente'}, 501
+
+        workouts = AssignedWorkout.query.filter_by(
+            user_id=user_id
+        ).order_by(
+            AssignedWorkout.assigned_date.desc()
+        ).all()
+
+        history = []
+
+        for w in workouts:
+
+            day_exercises = []
+
+            for template_ex in (w.template.exercises or []):
+
+                logs = ExerciseLog.query.filter_by(
+                    assigned_workout_id=w.id,
+                    exercise_id=template_ex.id
+                ).all()
+
+                # 🔹 tomamos el último log (resumen por ejercicio)
+                last_log = logs[-1] if logs else None
+
+                day_exercises.append({
+                    "name": template_ex.name,
+                    "planned": {
+                        "sets": template_ex.sets,
+                        "reps": template_ex.reps,
+                        "weight": template_ex.weight
+                    },
+                    "actual": {
+                        "sets": last_log.performed_sets if last_log else None,
+                        "reps": last_log.performed_reps if last_log else None,
+                        "weight": last_log.performed_weight if last_log else None
+                    }
+                })
+
+            history.append({
+                "date": w.assigned_date.isoformat(),
+                "workout": w.template.name if w.template else None,
+                "status": w.status,
+                "exercises": day_exercises
+            })
+
+        return {
+            "history": history
+        }, 200
