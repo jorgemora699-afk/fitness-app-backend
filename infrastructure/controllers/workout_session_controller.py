@@ -8,6 +8,9 @@ from application.use_cases.routines.workout_session_use_cases import (
     GetSessionHistoryByUserUseCase
 )
 from domain.entities.WorkoutSession import WorkoutSession
+from domain.entities.WorkoutSession import WorkoutSession
+from domain.entities.schedule import Schedule
+from datetime import datetime
 
 session_bp = Blueprint('workout_sessions', __name__, url_prefix='/api/sessions')
 
@@ -131,10 +134,6 @@ def finish_my_session(session_id):
     if get_role() != 'user':
         return jsonify({'error': 'Acceso solo para usuarios'}), 403
     user_id = int(get_jwt_identity())
-
-    from domain.entities.workout_session import WorkoutSession
-    from domain.entities.schedule import Schedule
-    from datetime import datetime
 
     session = WorkoutSession.query.filter_by(
         id=session_id,
