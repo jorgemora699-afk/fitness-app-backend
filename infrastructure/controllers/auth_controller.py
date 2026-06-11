@@ -4,7 +4,8 @@ from application.use_cases.auth.auth_use_cases import (
     RegisterUserUseCase,
     LoginUserUseCase,
     LoginTrainerUseCase,
-    CreateTrainerUseCase
+    CreateTrainerUseCase, 
+    ResetPasswordUseCase
 )
 from domain.entities.trainer import Trainer
 from infrastructure.database.db import db
@@ -77,3 +78,9 @@ def update_trainer_profile():
 
     db.session.commit()
     return jsonify({'trainer': trainer.to_dict()}), 200
+
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json()
+    result, status = ResetPasswordUseCase().execute(data)
+    return jsonify(result), status

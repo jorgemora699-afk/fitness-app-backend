@@ -88,3 +88,32 @@ class CreateTrainerUseCase:
         db.session.add(trainer)
         db.session.commit()
         return {'message': 'Entrenador creado exitosamente', 'trainer': trainer.to_dict()}, 201
+    
+class ResetPasswordUseCase:
+    def execute(self, data):
+        email = data.get('email')
+        trainer_code = data.get('trainer_code')
+        new_password = data.get('new_password')
+
+        if not email or not trainer_code or not new_password:
+            return {'error': 'Email, código del entrenador y nueva contraseña son requeridos'}, 400
+
+        if len(new_password) < 6:
+            return {'error': 'La contraseña debe tener al menos 6 caracteres'}, 400
+
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        trainer = Trainer.query.filter_by(
+            trainer_code=trainer_code.upper(),
+            id=user.trainer_id
+        ).first()
+
+        if not trainer:
+            return {'error': 'Código del entrenador incorrecto'}, 400
+
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+
+        return {'message': 'Contraseña actualizada correctamente'}, 200
