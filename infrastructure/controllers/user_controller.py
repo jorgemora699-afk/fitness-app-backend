@@ -5,7 +5,8 @@ from application.use_cases.users.user_use_cases import (
     GetUserByIdUseCase,
     UpdateUserUseCase,
     AssignTrainerUseCase,
-    GetUserProfileUseCase
+    GetUserProfileUseCase,
+    ChangePasswordUseCase
 )
 
 user_bp = Blueprint('users', __name__, url_prefix='/api/users')
@@ -71,4 +72,15 @@ def get_my_profile():
     if error: return error
     user_id = int(get_jwt_identity())
     result, status = GetUserProfileUseCase().execute(user_id)
+    return jsonify(result), status
+
+# ── Usuario: cambiar contraseña ──
+@user_bp.route('/me/password', methods=['PUT'])
+@jwt_required()
+def change_password():
+    error = user_required()
+    if error: return error
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    result, status = ChangePasswordUseCase().execute(user_id, data)
     return jsonify(result), status
