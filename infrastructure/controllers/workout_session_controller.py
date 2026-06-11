@@ -123,3 +123,38 @@ def start_my_session():
         user_id=user_id
     )
     return jsonify(result), status
+
+# ── Usuario: finalizar su propia sesión ──
+@session_bp.route('/me/<int:session_id>/finish', methods=['PUT'])
+@jwt_required()
+def finish_my_session(session_id):
+    if get_role() != 'user':
+        return jsonify({'error': 'Acceso solo para usuarios'}), 403
+    user_id = int(get_jwt_identity())
+
+    from domain.entities.workout_session import WorkoutSession
+    from domain.entities.schedule import Schedule
+    from datetime import datetime
+
+    session = WorkoutSession.query.filter_by(
+        id=session_id,
+        user_id=user_id
+    ).first()
+
+    if not session:
+        return jsonify({'error': 'Sesión no encontrada'}), 404
+
+    if session.status == 'completed':
+        return jsonify({'error': 'Esta sesión ya fue completada'}), 400
+
+    session.status = 'completed'
+    session.finished_at = datetime.utcnow()
+
+    schedule = Schedule.query.get(session.schedule_id)
+    if schedule:
+        schedule.confirmed = True
+
+    from infrastructure.database.db import db
+    db.session.commit()
+
+    return jsonify({'message': 'Sesión finalizada', 'session': session.to_dict()}), 200
