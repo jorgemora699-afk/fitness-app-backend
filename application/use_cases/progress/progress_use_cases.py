@@ -6,6 +6,21 @@ from datetime import date
 
 class AddBodyRecordUseCase:
     def execute(self, user_id, data):
+        from datetime import date
+        today = date.today()
+        recorded_at = date.fromisoformat(data['recorded_at']) if data.get('recorded_at') else today
+
+        # Evitar duplicado en el mismo segundo
+        from sqlalchemy import func
+        existing = BodyRecord.query.filter_by(
+            user_id=user_id,
+            weight=data['weight'],
+            recorded_at=recorded_at
+        ).first()
+
+        if existing:
+            return {'message': 'Registro ya existe', 'record': existing.to_dict()}, 200
+
         record = BodyRecord(
             user_id=user_id,
             weight=data['weight'],
