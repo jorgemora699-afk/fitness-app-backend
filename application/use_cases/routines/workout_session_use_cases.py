@@ -6,12 +6,20 @@ from datetime import datetime
 
 
 class StartWorkoutSessionUseCase:
-    def execute(self, schedule_id, trainer_id):
+    def execute(self, schedule_id, trainer_id=None, user_id=None):
 
-        schedule = Schedule.query.filter_by(
-            id=schedule_id,
-            trainer_id=trainer_id
-        ).first()
+        from domain.entities.schedule import Schedule
+
+        if trainer_id:
+            schedule = Schedule.query.filter_by(
+                id=schedule_id,
+                trainer_id=trainer_id
+            ).first()
+        else:
+            schedule = Schedule.query.filter_by(
+                id=schedule_id,
+                user_id=user_id
+            ).first()
 
         if not schedule:
             return {'error': 'Horario no encontrado'}, 404
@@ -22,7 +30,6 @@ class StartWorkoutSessionUseCase:
         if not schedule.routine_id:
             return {'error': 'Este horario no tiene rutina asignada'}, 400
 
-        # Verificar si ya existe una sesión activa para este schedule
         existing = WorkoutSession.query.filter_by(
             schedule_id=schedule_id,
             status='in_progress'
@@ -37,7 +44,7 @@ class StartWorkoutSessionUseCase:
         session = WorkoutSession(
             schedule_id=schedule_id,
             user_id=schedule.user_id,
-            trainer_id=trainer_id,
+            trainer_id=schedule.trainer_id,
             status='in_progress'
         )
 

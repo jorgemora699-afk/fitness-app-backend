@@ -107,3 +107,19 @@ def get_my_session_by_schedule(schedule_id):
         return jsonify({'session': None}), 200
 
     return jsonify({'session': session.to_dict()}), 200
+
+# ── Usuario: iniciar su propia sesión ──
+@session_bp.route('/me/start', methods=['POST'])
+@jwt_required()
+def start_my_session():
+    if get_role() != 'user':
+        return jsonify({'error': 'Acceso solo para usuarios'}), 403
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    if not data.get('schedule_id'):
+        return jsonify({'error': 'schedule_id es requerido'}), 400
+    result, status = StartWorkoutSessionUseCase().execute(
+        data['schedule_id'],
+        user_id=user_id
+    )
+    return jsonify(result), status
