@@ -7,6 +7,7 @@ from application.use_cases.routines.workout_session_use_cases import (
     GetSessionByScheduleUseCase,
     GetSessionHistoryByUserUseCase
 )
+from domain.entities.WorkoutSession import WorkoutSession
 
 session_bp = Blueprint('workout_sessions', __name__, url_prefix='/api/sessions')
 
@@ -88,3 +89,21 @@ def get_session_history(user_id):
     trainer_id = int(get_jwt_identity())
     result, status = GetSessionHistoryByUserUseCase().execute(user_id, trainer_id)
     return jsonify(result), status
+
+# ── Usuario: obtener sesión de un schedule ──
+@session_bp.route('/me/by-schedule/<int:schedule_id>', methods=['GET'])
+@jwt_required()
+def get_my_session_by_schedule(schedule_id):
+    if get_role() != 'user':
+        return jsonify({'error': 'Acceso solo para usuarios'}), 403
+    user_id = int(get_jwt_identity())
+
+    session = WorkoutSession.query.filter_by(
+        schedule_id=schedule_id,
+        user_id=user_id
+    ).first()
+
+    if not session:
+        return jsonify({'session': None}), 200
+
+    return jsonify({'session': session.to_dict()}), 200
