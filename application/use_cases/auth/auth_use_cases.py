@@ -46,7 +46,7 @@ class LoginUserUseCase:
         if not check_password_hash(user.password_hash, password):
             return {'error': 'Credenciales inválidas'}, 401
 
-        # Verificar membresía activa
+        # Verificar membresía activa (sin bloquear el login)
         today = date.today()
         active_membership = Membership.query.filter_by(
             user_id=user.id,
@@ -55,10 +55,10 @@ class LoginUserUseCase:
             Membership.end_date >= today
         ).first()
 
-        if not active_membership:
-            return {'error': 'No tienes una membresía activa. Contacta a tu entrenador.'}, 403
-
-        return {'user': user.to_dict(), 'membership': active_membership.to_dict()}, 200
+        return {
+            'user': user.to_dict(),
+            'membership': active_membership.to_dict() if active_membership else None
+        }, 200
 
 
 class LoginTrainerUseCase:
