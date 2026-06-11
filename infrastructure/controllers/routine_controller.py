@@ -165,3 +165,14 @@ def copy_routine(routine_id):
     data = request.get_json()
     result, status = CopyRoutineToUserUseCase().execute(routine_id, trainer_id, data)
     return jsonify(result), status
+
+# ── Usuario: ver todas sus rutinas ──
+@routine_bp.route('/me/all', methods=['GET'])
+@jwt_required()
+def get_my_routines():
+    if get_role() != 'user':
+        return jsonify({'error': 'Acceso solo para usuarios'}), 403
+    user_id = int(get_jwt_identity())
+    from domain.entities.routine import Routine
+    routines = Routine.query.filter_by(user_id=user_id).all()
+    return jsonify({'routines': [r.to_dict() for r in routines]}), 200
