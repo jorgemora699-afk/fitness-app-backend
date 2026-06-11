@@ -3,6 +3,7 @@ from domain.entities.routine import Routine, Exercise
 from domain.entities.user import User
 from infrastructure.database.db import db
 from datetime import date
+from sqlalchemy import func
 
 class AddBodyRecordUseCase:
     def execute(self, user_id, data):
@@ -11,7 +12,6 @@ class AddBodyRecordUseCase:
         recorded_at = date.fromisoformat(data['recorded_at']) if data.get('recorded_at') else today
 
         # Evitar duplicado en el mismo segundo
-        from sqlalchemy import func
         existing = BodyRecord.query.filter_by(
             user_id=user_id,
             weight=data['weight'],
@@ -29,6 +29,14 @@ class AddBodyRecordUseCase:
             recorded_at=date.fromisoformat(data['recorded_at']) if data.get('recorded_at') else date.today()
         )
         db.session.add(record)
+        # Actualizar peso en el perfil del usuario
+        user = User.query.get(user_id)
+        if user:
+            user.weight = data['weight']
+            if data.get('body_fat'):
+                user.body_fat = data['body_fat']
+            if data.get('muscle_mass'):
+                user.muscle_mass = data['muscle_mass']
         db.session.commit()
         return {'message': 'Registro agregado', 'record': record.to_dict()}, 201
 
