@@ -74,7 +74,7 @@ class ChangePasswordUseCase:
         if not user:
             return {'error': 'Usuario no encontrado'}, 404
 
-        if not check_password_hash(user.password, data.get('current_password', '')):
+        if not check_password_hash(user.password_hash, data.get('current_password', '')):
             return {'error': 'Contraseña actual incorrecta'}, 400
 
         if not data.get('new_password'):
@@ -83,6 +83,6 @@ class ChangePasswordUseCase:
         if len(data['new_password']) < 6:
             return {'error': 'La contraseña debe tener al menos 6 caracteres'}, 400
 
-        user.password = generate_password_hash(data['new_password'])
+        user.password_hash  = generate_password_hash(data['new_password'])
         db.session.commit()
         return {'message': 'Contraseña actualizada correctamente'}, 200
