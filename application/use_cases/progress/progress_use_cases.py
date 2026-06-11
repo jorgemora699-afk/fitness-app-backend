@@ -166,3 +166,32 @@ class GetIMCUseCase:
             'weight': user.weight,
             'height': user.height
         }, 200
+    
+class DeleteBodyRecordUseCase:
+    def execute(self, user_id, record_id):
+        record = BodyRecord.query.filter_by(
+            id=record_id,
+            user_id=user_id
+        ).first()
+
+        if not record:
+            return {'error': 'Registro no encontrado'}, 404
+
+        db.session.delete(record)
+        db.session.flush()
+
+        # Actualizar peso en el perfil con el registro más reciente
+        latest = BodyRecord.query.filter_by(
+            user_id=user_id
+        ).order_by(BodyRecord.recorded_at.desc()).first()
+
+        user = User.query.get(user_id)
+        if user and latest:
+            user.weight = latest.weight
+            if latest.body_fat:
+                user.body_fat = latest.body_fat
+            if latest.muscle_mass:
+                user.muscle_mass = latest.muscle_mass
+
+        db.session.commit()
+        return {'message': 'Registro eliminado'}, 200

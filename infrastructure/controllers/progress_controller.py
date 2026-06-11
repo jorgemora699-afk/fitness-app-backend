@@ -5,7 +5,8 @@ from application.use_cases.progress.progress_use_cases import (
     GetBodyProgressUseCase,
     GetExerciseProgressUseCase,
     GetUserProgressAsTrainerUseCase,
-    GetIMCUseCase
+    GetIMCUseCase, 
+    DeleteBodyRecordUseCase
 )
 
 progress_bp = Blueprint('progress', __name__, url_prefix='/api/progress')
@@ -82,4 +83,14 @@ def get_user_imc(user_id):
     if not u:
         return jsonify({'error': 'Usuario no encontrado'}), 404
     result, status = GetIMCUseCase().execute(user_id)
+    return jsonify(result), status
+
+# ── Usuario: eliminar registro de peso ──
+@progress_bp.route('/body/<int:record_id>', methods=['DELETE'])
+@jwt_required()
+def delete_body_record(record_id):
+    if get_role() != 'user':
+        return jsonify({'error': 'Acceso solo para usuarios'}), 403
+    user_id = int(get_jwt_identity())
+    result, status = DeleteBodyRecordUseCase().execute(user_id, record_id)
     return jsonify(result), status
