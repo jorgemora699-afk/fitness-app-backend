@@ -16,6 +16,8 @@ class Config:
     CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
     CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
 
+    RESEND_API_KEY = os.getenv('RESEND_API_KEY')
+
     # Flask-Mail
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 587

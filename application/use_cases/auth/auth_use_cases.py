@@ -121,29 +121,32 @@ class ResetPasswordUseCase:
 class SendResetCodeTrainerUseCase:
     def execute(self, email):
         import random
-        from flask_mail import Message
+        import resend
         from flask import current_app
 
         trainer = Trainer.query.filter_by(email=email).first()
         if not trainer:
             return {'error': 'Entrenador no encontrado'}, 404
 
-        # Generar código de 6 dígitos
         code = str(random.randint(100000, 999999))
-
-        # Guardar código temporalmente en la BD
         trainer.reset_code = code
         db.session.commit()
 
-        # Enviar email
         try:
-            mail = current_app.extensions['mail']
-            msg = Message(
-                subject='Código de recuperación - FitTracker',
-                recipients=[email],
-                body=f'Hola {trainer.name},\n\nTu código de recuperación es: {code}\n\nEste código es válido por 15 minutos.\n\nSi no solicitaste este código, ignora este mensaje.'
-            )
-            mail.send(msg)
+            resend.api_key = current_app.config['RESEND_API_KEY']
+            resend.Emails.send({
+                'from': 'onboarding@resend.dev',
+                'to': email,
+                'subject': 'Código de recuperación - FitTracker',
+                'html': f'''
+                    <h2>Recuperación de contraseña</h2>
+                    <p>Hola {trainer.name},</p>
+                    <p>Tu código de recuperación es:</p>
+                    <h1 style="letter-spacing: 8px; color: #333;">{code}</h1>
+                    <p>Este código es válido por 15 minutos.</p>
+                    <p>Si no solicitaste este código, ignora este mensaje.</p>
+                '''
+            })
         except Exception as e:
             return {'error': f'No se pudo enviar el email: {str(e)}'}, 500
 
