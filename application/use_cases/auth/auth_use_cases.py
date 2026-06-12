@@ -137,7 +137,7 @@ class SendResetCodeTrainerUseCase:
             resend.Emails.send({
                 'from': 'onboarding@resend.dev',
                 'to': 'expopro39@gmail.com',
-                'subject': 'Código de recuperación - FitTracker',
+                'subject': 'Código de recuperación - FitTrainer',
                 'html': f'''
                     <h2>Recuperación de contraseña</h2>
                     <p>Hola {trainer.name},</p>
