@@ -11,6 +11,7 @@ from infrastructure.controllers.attendance_controller import attendance_bp
 from infrastructure.controllers.note_controller import note_bp
 from infrastructure.controllers.assigned_workout_controller import assigned_workout_bp
 from infrastructure.controllers.workout_session_controller import session_bp
+from infrastructure.controllers.admin_controller import admin_bp
 
 def register_routes(app):
     app.register_blueprint(auth_bp)
@@ -26,3 +27,4 @@ def register_routes(app):
     app.register_blueprint(note_bp)
     app.register_blueprint(assigned_workout_bp)
     app.register_blueprint(session_bp)
+    app.register_blueprint(admin_bp)
