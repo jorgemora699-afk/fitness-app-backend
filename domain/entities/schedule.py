@@ -13,9 +13,15 @@ class Schedule(db.Model):
     confirmed = db.Column(db.Boolean, default=False)
     cancelled = db.Column(db.Boolean, default=False)
     cancel_reason = db.Column(db.String(255), nullable=True)
-    cancelled_by = db.Column(db.String(20), nullable=True)  # 'user' o 'trainer'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    cancelled_by = db.Column(db.String(20), nullable=True)
     routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=True)
+
+    # Nuevos campos
+    notified = db.Column(db.Boolean, default=False)
+    user_response = db.Column(db.String(20), default='pending')  # pending, confirmed, declined
+    attended = db.Column(db.Boolean, nullable=True)  # null = sin marcar, true/false = asistió o no
+
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
         return {
@@ -29,6 +35,9 @@ class Schedule(db.Model):
             'cancelled': self.cancelled,
             'cancel_reason': self.cancel_reason,
             'cancelled_by': self.cancelled_by,
-            'created_at': self.created_at.isoformat(),
             'routine_id': self.routine_id,
+            'notified': self.notified,
+            'user_response': self.user_response,
+            'attended': self.attended,
+            'created_at': self.created_at.isoformat()
         }

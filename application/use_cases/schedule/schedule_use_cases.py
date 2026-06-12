@@ -3,6 +3,7 @@ from domain.entities.user import User
 from infrastructure.database.db import db
 from datetime import date, datetime, timedelta
 import urllib.parse
+import requests
 
 class CreateScheduleUseCase:
     def execute(self, trainer_id, data):
@@ -335,3 +336,111 @@ class CancelScheduleAsTrainerUseCase:
             'schedule': schedule.to_dict(),
             'whatsapp_url': whatsapp_url
         }, 200
+    
+class NotifyScheduleUseCase:
+    def execute(self, schedule_id, trainer_id):
+        schedule = Schedule.query.filter_by(
+            id=schedule_id,
+            trainer_id=trainer_id
+        ).first()
+        if not schedule:
+            return {'error': 'Horario no encontrado'}, 404
+
+        user = User.query.get(schedule.user_id)
+        if not user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        if not user.push_token:
+            return {'error': 'El usuario no tiene notificaciones activadas'}, 400
+
+        message = {
+            'to': user.push_token,
+            'sound': 'default',
+            'title': 'Entrenamiento programado 💪',
+            'body': f'Tienes entrenamiento el {schedule.date} a las {schedule.start_time.strftime("%H:%M")}. ¿Vas a asistir?',
+            'data': {
+                'type': 'schedule_confirmation',
+                'schedule_id': schedule.id
+            }
+        }
+
+        try:
+            response = requests.post(
+                'https://exp.host/--/api/v2/push/send',
+                json=message,
+                headers={'Content-Type': 'application/json'},
+                timeout=10
+            )
+        except Exception as e:
+            return {'error': f'Error enviando notificación: {str(e)}'}, 500
+
+        schedule.notified = True
+        schedule.user_response = 'pending'
+        db.session.commit()
+
+        return {'message': 'Notificación enviada', 'schedule': schedule.to_dict()}, 200
+
+
+class RespondScheduleUseCase:
+    def execute(self, schedule_id, user_id, response):
+        if response not in ['confirmed', 'declined']:
+            return {'error': 'Respuesta inválida'}, 400
+
+        schedule = Schedule.query.filter_by(
+            id=schedule_id,
+            user_id=user_id
+        ).first()
+        if not schedule:
+            return {'error': 'Horario no encontrado'}, 404
+
+        schedule.user_response = response
+        if response == 'confirmed':
+            schedule.confirmed = True
+
+        db.session.commit()
+        return {'message': 'Respuesta registrada', 'schedule': schedule.to_dict()}, 200
+
+
+class MarkAttendanceUseCase:
+    def execute(self, schedule_id, trainer_id, attended):
+        schedule = Schedule.query.filter_by(
+            id=schedule_id,
+            trainer_id=trainer_id
+        ).first()
+        if not schedule:
+            return {'error': 'Horario no encontrado'}, 404
+
+        schedule.attended = attended
+        db.session.commit()
+
+        # Registrar en la tabla de asistencia
+        from domain.entities.attendance import Attendance
+        existing = Attendance.query.filter_by(
+            user_id=schedule.user_id,
+            date=schedule.date
+        ).first()
+
+        if existing:
+            existing.attended = attended
+        else:
+            attendance = Attendance(
+                user_id=schedule.user_id,
+                trainer_id=trainer_id,
+                date=schedule.date,
+                attended=attended
+            )
+            db.session.add(attendance)
+
+        db.session.commit()
+        return {'message': 'Asistencia registrada', 'schedule': schedule.to_dict()}, 200
+
+
+class GetPendingSchedulesUseCase:
+    def execute(self, user_id):
+        schedules = Schedule.query.filter_by(
+            user_id=user_id,
+            user_response='pending',
+            cancelled=False
+        ).filter(Schedule.notified == True).all()
+
+        return {'schedules': [s.to_dict() for s in schedules]}, 200

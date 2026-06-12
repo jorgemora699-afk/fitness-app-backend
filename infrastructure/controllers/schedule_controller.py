@@ -8,7 +8,11 @@ from application.use_cases.schedule.schedule_use_cases import (
     SendWhatsAppConfirmationUseCase,
     CancelScheduleAsUserUseCase,
     CancelScheduleAsTrainerUseCase,
-    UpdateScheduleUseCase
+    UpdateScheduleUseCase,
+    NotifyScheduleUseCase,
+    RespondScheduleUseCase,
+    MarkAttendanceUseCase,
+    GetPendingSchedulesUseCase
 )
 
 schedule_bp = Blueprint('schedules', __name__, url_prefix='/api/schedules')
@@ -122,4 +126,46 @@ def cancel_as_trainer(schedule_id):
     data = request.get_json() or {}
     reason = data.get('reason')
     result, status = CancelScheduleAsTrainerUseCase().execute(schedule_id, trainer_id, reason)
+    return jsonify(result), status
+
+# ── Entrenador: enviar notificación push ──
+@schedule_bp.route('/<int:schedule_id>/notify', methods=['POST'])
+@jwt_required()
+def notify_schedule(schedule_id):
+    if get_role() != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    result, status = NotifyScheduleUseCase().execute(schedule_id, trainer_id)
+    return jsonify(result), status
+
+# ── Usuario: responder si va a asistir ──
+@schedule_bp.route('/<int:schedule_id>/respond', methods=['POST'])
+@jwt_required()
+def respond_schedule(schedule_id):
+    if get_role() != 'user':
+        return jsonify({'error': 'Acceso solo para usuarios'}), 403
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    result, status = RespondScheduleUseCase().execute(schedule_id, user_id, data.get('response'))
+    return jsonify(result), status
+
+# ── Entrenador: marcar si el usuario asistió ──
+@schedule_bp.route('/<int:schedule_id>/attendance', methods=['POST'])
+@jwt_required()
+def mark_attendance(schedule_id):
+    if get_role() != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    data = request.get_json()
+    result, status = MarkAttendanceUseCase().execute(schedule_id, trainer_id, data.get('attended'))
+    return jsonify(result), status
+
+# ── Usuario: ver entrenamientos pendientes de confirmar ──
+@schedule_bp.route('/me/pending', methods=['GET'])
+@jwt_required()
+def get_pending_schedules():
+    if get_role() != 'user':
+        return jsonify({'error': 'Acceso solo para usuarios'}), 403
+    user_id = int(get_jwt_identity())
+    result, status = GetPendingSchedulesUseCase().execute(user_id)
     return jsonify(result), status
