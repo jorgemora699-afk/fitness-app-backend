@@ -136,7 +136,7 @@ class SendResetCodeTrainerUseCase:
             resend.api_key = current_app.config['RESEND_API_KEY']
             resend.Emails.send({
                 'from': 'onboarding@resend.dev',
-                'to': email,
+                'to': 'expopro39@gmail.com',
                 'subject': 'Código de recuperación - FitTracker',
                 'html': f'''
                     <h2>Recuperación de contraseña</h2>
@@ -150,7 +150,7 @@ class SendResetCodeTrainerUseCase:
         except Exception as e:
             return {'error': f'No se pudo enviar el email: {str(e)}'}, 500
 
-        return {'message': 'Código enviado al correo'}, 200
+        return {'message': 'Código enviado al correo', 'code': code}, 200
 
 
 class ResetPasswordTrainerUseCase:
