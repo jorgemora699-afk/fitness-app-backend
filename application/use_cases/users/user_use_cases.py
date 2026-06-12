@@ -86,3 +86,13 @@ class ChangePasswordUseCase:
         user.password_hash  = generate_password_hash(data['new_password'])
         db.session.commit()
         return {'message': 'Contraseña actualizada correctamente'}, 200
+    
+class SavePushTokenUseCase:
+    def execute(self, user_id, push_token):
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        user.push_token = push_token
+        db.session.commit()
+        return {'message': 'Token guardado'}, 200

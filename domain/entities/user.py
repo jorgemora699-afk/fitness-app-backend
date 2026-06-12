@@ -21,6 +21,7 @@ class User(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainers.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    push_token = db.Column(db.String(255), nullable=True)
 
     memberships = db.relationship('Membership', backref='user', lazy=True)
     routines = db.relationship('Routine', backref='user', lazy=True)

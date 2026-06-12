@@ -6,7 +6,8 @@ from application.use_cases.users.user_use_cases import (
     UpdateUserUseCase,
     AssignTrainerUseCase,
     GetUserProfileUseCase,
-    ChangePasswordUseCase
+    ChangePasswordUseCase,
+    SavePushTokenUseCase
 )
 
 user_bp = Blueprint('users', __name__, url_prefix='/api/users')
@@ -83,4 +84,17 @@ def change_password():
     user_id = int(get_jwt_identity())
     data = request.get_json()
     result, status = ChangePasswordUseCase().execute(user_id, data)
+    return jsonify(result), status
+
+# ── Usuario: guardar push token ──
+@user_bp.route('/me/push-token', methods=['POST'])
+@jwt_required()
+def save_push_token():
+    error = user_required()
+    if error: return error
+    user_id = int(get_jwt_identity())
+    data = request.get_json()
+    if not data.get('push_token'):
+        return jsonify({'error': 'push_token requerido'}), 400
+    result, status = SavePushTokenUseCase().execute(user_id, data['push_token'])
     return jsonify(result), status
