@@ -117,3 +117,60 @@ class ResetPasswordUseCase:
         db.session.commit()
 
         return {'message': 'Contraseña actualizada correctamente'}, 200
+    
+class SendResetCodeTrainerUseCase:
+    def execute(self, email):
+        import random
+        from flask_mail import Message
+        from flask import current_app
+
+        trainer = Trainer.query.filter_by(email=email).first()
+        if not trainer:
+            return {'error': 'Entrenador no encontrado'}, 404
+
+        # Generar código de 6 dígitos
+        code = str(random.randint(100000, 999999))
+
+        # Guardar código temporalmente en la BD
+        trainer.reset_code = code
+        db.session.commit()
+
+        # Enviar email
+        try:
+            mail = current_app.extensions['mail']
+            msg = Message(
+                subject='Código de recuperación - FitTracker',
+                recipients=[email],
+                body=f'Hola {trainer.name},\n\nTu código de recuperación es: {code}\n\nEste código es válido por 15 minutos.\n\nSi no solicitaste este código, ignora este mensaje.'
+            )
+            mail.send(msg)
+        except Exception as e:
+            return {'error': f'No se pudo enviar el email: {str(e)}'}, 500
+
+        return {'message': 'Código enviado al correo'}, 200
+
+
+class ResetPasswordTrainerUseCase:
+    def execute(self, data):
+        email = data.get('email')
+        code = data.get('code')
+        new_password = data.get('new_password')
+
+        if not email or not code or not new_password:
+            return {'error': 'Email, código y nueva contraseña son requeridos'}, 400
+
+        if len(new_password) < 6:
+            return {'error': 'La contraseña debe tener al menos 6 caracteres'}, 400
+
+        trainer = Trainer.query.filter_by(email=email).first()
+        if not trainer:
+            return {'error': 'Entrenador no encontrado'}, 404
+
+        if not trainer.reset_code or trainer.reset_code != code:
+            return {'error': 'Código incorrecto'}, 400
+
+        trainer.password_hash = generate_password_hash(new_password)
+        trainer.reset_code = None
+        db.session.commit()
+
+        return {'message': 'Contraseña actualizada correctamente'}, 200

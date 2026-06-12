@@ -5,7 +5,9 @@ from application.use_cases.auth.auth_use_cases import (
     LoginUserUseCase,
     LoginTrainerUseCase,
     CreateTrainerUseCase, 
-    ResetPasswordUseCase
+    ResetPasswordUseCase,
+    SendResetCodeTrainerUseCase,
+    ResetPasswordTrainerUseCase
 )
 from domain.entities.trainer import Trainer
 from infrastructure.database.db import db
@@ -83,4 +85,21 @@ def update_trainer_profile():
 def reset_password():
     data = request.get_json()
     result, status = ResetPasswordUseCase().execute(data)
+    return jsonify(result), status
+
+# ── Entrenador: solicitar código de recuperación ──
+@auth_bp.route('/trainer/forgot-password', methods=['POST'])
+def trainer_forgot_password():
+    data = request.get_json()
+    if not data.get('email'):
+        return jsonify({'error': 'El email es requerido'}), 400
+    result, status = SendResetCodeTrainerUseCase().execute(data['email'])
+    return jsonify(result), status
+
+
+# ── Entrenador: resetear contraseña con código ──
+@auth_bp.route('/trainer/reset-password', methods=['POST'])
+def trainer_reset_password():
+    data = request.get_json()
+    result, status = ResetPasswordTrainerUseCase().execute(data)
     return jsonify(result), status

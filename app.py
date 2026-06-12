@@ -16,6 +16,10 @@ def create_app():
     db.init_app(app)
     Migrate(app, db)
 
+    from flask_mail import Mail
+    mail = Mail(app)
+    app.extensions['mail'] = mail
+
     from domain.entities.user import User
     from domain.entities.trainer import Trainer
     from domain.entities.routine import Routine, Exercise

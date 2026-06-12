@@ -16,6 +16,7 @@ class Trainer(db.Model):
     phone = db.Column(db.String(20), nullable=True)
     trainer_code = db.Column(db.String(8), unique=True, nullable=False, default=generate_trainer_code)
     is_active = db.Column(db.Boolean, default=True)
+    reset_code = db.Column(db.String(6), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     users = db.relationship('User', backref='trainer', lazy=True)
