@@ -70,6 +70,24 @@ class LoginTrainerUseCase:
         if not check_password_hash(trainer.password_hash, password):
             return {'error': 'Credenciales inválidas'}, 401
 
+        if not trainer.is_active:
+            return {'error': 'Tu cuenta ha sido desactivada. Contacta al administrador.'}, 403
+
+        # Verificar suscripción activa
+        from domain.entities.trainer_subscription import TrainerSubscription
+        from datetime import date
+        today = date.today()
+
+        latest = TrainerSubscription.query.filter_by(
+            trainer_id=trainer.id
+        ).order_by(TrainerSubscription.due_date.desc()).first()
+
+        if latest and not latest.is_paid and latest.due_date < today:
+            return {
+                'error': 'Tu suscripción ha vencido. Contacta al administrador para renovarla.',
+                'code': 'SUBSCRIPTION_EXPIRED'
+            }, 403
+
         return {'trainer': trainer.to_dict()}, 200
 
 

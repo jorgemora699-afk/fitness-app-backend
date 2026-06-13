@@ -13,6 +13,43 @@ from infrastructure.controllers.assigned_workout_controller import assigned_work
 from infrastructure.controllers.workout_session_controller import session_bp
 from infrastructure.controllers.admin_controller import admin_bp
 
+from flask import jsonify
+from flask_jwt_extended import verify_jwt_in_request, get_jwt, get_jwt_identity
+from datetime import date
+
+def check_trainer_subscription(app):
+    @app.before_request
+    def verify_subscription():
+        from flask import request
+        
+        # Solo verificar rutas del entrenador que no sean auth
+        if not request.path.startswith('/api/') or request.path.startswith('/api/auth') or request.path.startswith('/api/admin'):
+            return
+        
+        try:
+            verify_jwt_in_request(optional=True)
+            claims = get_jwt()
+            if claims.get('role') != 'trainer':
+                return
+            
+            trainer_id = int(get_jwt_identity())
+            
+            from domain.entities.trainer_subscription import TrainerSubscription
+            today = date.today()
+            
+            latest = TrainerSubscription.query.filter_by(
+                trainer_id=trainer_id
+            ).order_by(TrainerSubscription.due_date.desc()).first()
+            
+            if latest and not latest.is_paid and latest.due_date < today:
+                return jsonify({
+                    'error': 'Tu suscripción ha vencido.',
+                    'code': 'SUBSCRIPTION_EXPIRED'
+                }), 403
+                
+        except Exception:
+            return
+
 def register_routes(app):
     app.register_blueprint(auth_bp)
     app.register_blueprint(user_bp)
@@ -28,3 +65,4 @@ def register_routes(app):
     app.register_blueprint(assigned_workout_bp)
     app.register_blueprint(session_bp)
     app.register_blueprint(admin_bp)
+    check_trainer_subscription(app)

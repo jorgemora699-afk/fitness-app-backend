@@ -13,6 +13,7 @@ attendance_bp = Blueprint('attendance', __name__, url_prefix='/api/attendance')
 def get_role():
     return get_jwt().get('role')
 
+
 # ── Entrenador: registrar asistencia de un usuario ──
 @attendance_bp.route('/', methods=['POST'])
 @jwt_required()

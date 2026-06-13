@@ -20,6 +20,7 @@ schedule_bp = Blueprint('schedules', __name__, url_prefix='/api/schedules')
 def get_role():
     return get_jwt().get('role')
 
+
 # ── Entrenador: crear horario ──
 @schedule_bp.route('/', methods=['POST'])
 @jwt_required()
