@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
 from domain.entities.admin import Admin
+from domain.entities.trainer_subscription import TrainerSubscription
 
 from config import Config
 from infrastructure.database.db import db

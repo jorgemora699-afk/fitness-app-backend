@@ -5,7 +5,11 @@ from application.use_cases.admin.admin_use_cases import (
     GetAllTrainersUseCase,
     ToggleTrainerStatusUseCase,
     ResetTrainerPasswordUseCase,
-    GetAdminStatsUseCase
+    GetAdminStatsUseCase,
+    CreateSubscriptionUseCase,
+    GetTrainerSubscriptionsUseCase,
+    ConfirmPaymentUseCase,
+    GetSubscriptionsSummaryUseCase
 )
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -72,4 +76,46 @@ def reset_trainer_password(trainer_id):
     if not data.get('new_password'):
         return jsonify({'error': 'Nueva contraseña requerida'}), 400
     result, status = ResetTrainerPasswordUseCase().execute(trainer_id, data['new_password'])
+    return jsonify(result), status
+
+# ── Admin: resumen de pagos de todos los entrenadores ──
+@admin_bp.route('/subscriptions/summary', methods=['GET'])
+@jwt_required()
+def get_subscriptions_summary():
+    error = admin_required()
+    if error: return error
+    result, status = GetSubscriptionsSummaryUseCase().execute()
+    return jsonify(result), status
+
+
+# ── Admin: ver suscripciones de un entrenador ──
+@admin_bp.route('/trainers/<int:trainer_id>/subscriptions', methods=['GET'])
+@jwt_required()
+def get_trainer_subscriptions(trainer_id):
+    error = admin_required()
+    if error: return error
+    result, status = GetTrainerSubscriptionsUseCase().execute(trainer_id)
+    return jsonify(result), status
+
+
+# ── Admin: crear suscripción para un entrenador ──
+@admin_bp.route('/trainers/<int:trainer_id>/subscriptions', methods=['POST'])
+@jwt_required()
+def create_subscription(trainer_id):
+    error = admin_required()
+    if error: return error
+    data = request.get_json()
+    if not all(k in data for k in ['amount', 'due_date']):
+        return jsonify({'error': 'Faltan campos requeridos'}), 400
+    result, status = CreateSubscriptionUseCase().execute(trainer_id, data)
+    return jsonify(result), status
+
+
+# ── Admin: confirmar pago de suscripción ──
+@admin_bp.route('/subscriptions/<int:subscription_id>/confirm', methods=['PUT'])
+@jwt_required()
+def confirm_payment(subscription_id):
+    error = admin_required()
+    if error: return error
+    result, status = ConfirmPaymentUseCase().execute(subscription_id)
     return jsonify(result), status
