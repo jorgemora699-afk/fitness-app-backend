@@ -82,7 +82,7 @@ class LoginTrainerUseCase:
             trainer_id=trainer.id
         ).order_by(TrainerSubscription.due_date.desc()).first()
 
-        if latest and not latest.is_paid and latest.due_date < today:
+        if latest and latest.due_date < today:
             return {
                 'error': 'Tu suscripción ha vencido. Contacta al administrador para renovarla.',
                 'code': 'SUBSCRIPTION_EXPIRED'

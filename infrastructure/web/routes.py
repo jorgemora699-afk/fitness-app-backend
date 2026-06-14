@@ -41,7 +41,7 @@ def check_trainer_subscription(app):
                 trainer_id=trainer_id
             ).order_by(TrainerSubscription.due_date.desc()).first()
             
-            if latest and not latest.is_paid and latest.due_date < today:
+            if latest and latest.due_date < today:
                 return jsonify({
                     'error': 'Tu suscripción ha vencido.',
                     'code': 'SUBSCRIPTION_EXPIRED'
