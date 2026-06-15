@@ -29,6 +29,7 @@ def create_schedule():
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
     trainer_id = int(get_jwt_identity())
     data = request.get_json()
+    print('DATA RECIBIDA:', data)
     if not all(k in data for k in ['user_id', 'date', 'start_time', 'end_time']):
         return jsonify({'error': 'Faltan campos requeridos'}), 400
     result, status = CreateScheduleUseCase().execute(trainer_id, data)

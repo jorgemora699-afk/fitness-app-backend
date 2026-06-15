@@ -53,6 +53,7 @@ class CreateScheduleUseCase:
                 start_time=start_time,
                 end_time=end_time,
                 routine_id=data.get('routine_id'),
+                session_type=data.get('session_type', 'Entrenamiento'),
             )
 
             db.session.add(schedule)
@@ -86,6 +87,7 @@ class CreateScheduleUseCase:
                             start_time=start_time,
                             end_time=end_time,
                             routine_id=data.get('routine_id'),
+                            session_type=data.get('session_type', 'Entrenamiento'),
                         )
 
                         db.session.add(schedule)
@@ -178,6 +180,9 @@ class UpdateScheduleUseCase:
 
         if 'routine_id' in data:
             schedule.routine_id = data['routine_id']
+        
+        if 'session_type' in data:
+            schedule.session_type = data['session_type']
 
         db.session.commit()
 

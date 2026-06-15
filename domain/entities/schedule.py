@@ -15,6 +15,7 @@ class Schedule(db.Model):
     cancel_reason = db.Column(db.String(255), nullable=True)
     cancelled_by = db.Column(db.String(20), nullable=True)
     routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=True)
+    session_type = db.Column(db.String(50), default='Entrenamiento')
 
     # Nuevos campos
     notified = db.Column(db.Boolean, default=False)
@@ -39,5 +40,6 @@ class Schedule(db.Model):
             'notified': self.notified,
             'user_response': self.user_response,
             'attended': self.attended,
+            'session_type': self.session_type,
             'created_at': self.created_at.isoformat()
         }
