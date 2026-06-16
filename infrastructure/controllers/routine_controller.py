@@ -176,3 +176,17 @@ def get_my_routines():
     from domain.entities.routine import Routine
     routines = Routine.query.filter_by(user_id=user_id).all()
     return jsonify({'routines': [r.to_dict() for r in routines]}), 200
+
+@routine_bp.route('/me/exercise-names', methods=['GET'])
+@jwt_required()
+def get_my_exercise_names():
+    from domain.entities.routine import Routine, Exercise
+    user_id = int(get_jwt_identity())
+    routines = Routine.query.filter_by(user_id=user_id).all()
+    routine_ids = [r.id for r in routines]
+    exercises = Exercise.query.filter(
+        Exercise.routine_id.in_(routine_ids)
+    ).all()
+    names = list(set([e.name for e in exercises]))
+    names.sort()
+    return jsonify({'names': names}), 200
