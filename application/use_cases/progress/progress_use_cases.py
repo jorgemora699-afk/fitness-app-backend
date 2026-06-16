@@ -76,7 +76,7 @@ class GetExerciseProgressUseCase:
         for routine in routines:
             exercises = Exercise.query.filter(
                 Exercise.routine_id == routine.id,
-                Exercise.name.ilike(f'%{exercise_name}%')
+                Exercise.name.ilike(exercise_name)
             ).all()
 
             for ex in exercises:
