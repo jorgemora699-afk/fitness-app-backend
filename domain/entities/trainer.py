@@ -17,6 +17,7 @@ class Trainer(db.Model):
     trainer_code = db.Column(db.String(8), unique=True, nullable=False, default=generate_trainer_code)
     is_active = db.Column(db.Boolean, default=True)
     reset_code = db.Column(db.String(6), nullable=True)
+    profile_photo = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     users = db.relationship('User', backref='trainer', lazy=True)
@@ -30,5 +31,6 @@ class Trainer(db.Model):
             'phone': self.phone,
             'trainer_code': self.trainer_code,
             'is_active': self.is_active,
+            'profile_photo': self.profile_photo,
             'created_at': self.created_at.isoformat()
         }

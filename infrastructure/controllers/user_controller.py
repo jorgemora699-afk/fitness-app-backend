@@ -9,6 +9,8 @@ from application.use_cases.users.user_use_cases import (
     ChangePasswordUseCase,
     SavePushTokenUseCase
 )
+from domain.entities.user import User
+from infrastructure.database.db import db
 
 user_bp = Blueprint('users', __name__, url_prefix='/api/users')
 
@@ -98,3 +100,29 @@ def save_push_token():
         return jsonify({'error': 'push_token requerido'}), 400
     result, status = SavePushTokenUseCase().execute(user_id, data['push_token'])
     return jsonify(result), status
+
+
+@user_bp.route('/me/photo', methods=['POST'])
+@jwt_required()
+def upload_user_photo():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No se envió foto'}), 400
+
+    import cloudinary
+    import cloudinary.uploader
+    import os
+    cloudinary.config(
+        cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+        api_key=os.getenv('CLOUDINARY_API_KEY'),
+        api_secret=os.getenv('CLOUDINARY_API_SECRET')
+    )
+    file = request.files['photo']
+    upload = cloudinary.uploader.upload(file, folder='fitness/profiles')
+    user.profile_photo = upload.get('secure_url')
+    db.session.commit()
+    return jsonify({'message': 'Foto actualizada', 'user': user.to_dict()}), 200
+

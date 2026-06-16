@@ -103,3 +103,30 @@ def trainer_reset_password():
     data = request.get_json()
     result, status = ResetPasswordTrainerUseCase().execute(data)
     return jsonify(result), status
+
+@auth_bp.route('/trainers/me/photo', methods=['POST'])
+@jwt_required()
+def upload_trainer_photo():
+    claims = get_jwt()
+    if claims.get('role') != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    trainer = Trainer.query.get(trainer_id)
+    if not trainer:
+        return jsonify({'error': 'Entrenador no encontrado'}), 404
+    if 'photo' not in request.files:
+        return jsonify({'error': 'No se envió foto'}), 400
+
+    import cloudinary
+    import cloudinary.uploader
+    import os
+    cloudinary.config(
+        cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+        api_key=os.getenv('CLOUDINARY_API_KEY'),
+        api_secret=os.getenv('CLOUDINARY_API_SECRET')
+    )
+    file = request.files['photo']
+    upload = cloudinary.uploader.upload(file, folder='fitness/profiles')
+    trainer.profile_photo = upload.get('secure_url')
+    db.session.commit()
+    return jsonify({'message': 'Foto actualizada', 'trainer': trainer.to_dict()}), 200
