@@ -130,3 +130,17 @@ def upload_trainer_photo():
     trainer.profile_photo = upload.get('secure_url')
     db.session.commit()
     return jsonify({'message': 'Foto actualizada', 'trainer': trainer.to_dict()}), 200
+
+@auth_bp.route('/trainers/me/photo', methods=['DELETE'])
+@jwt_required()
+def delete_trainer_photo():
+    claims = get_jwt()
+    if claims.get('role') != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    trainer = Trainer.query.get(trainer_id)
+    if not trainer:
+        return jsonify({'error': 'Entrenador no encontrado'}), 404
+    trainer.profile_photo = None
+    db.session.commit()
+    return jsonify({'message': 'Foto eliminada', 'trainer': trainer.to_dict()}), 200

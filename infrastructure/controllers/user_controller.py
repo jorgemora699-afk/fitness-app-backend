@@ -126,3 +126,14 @@ def upload_user_photo():
     db.session.commit()
     return jsonify({'message': 'Foto actualizada', 'user': user.to_dict()}), 200
 
+@user_bp.route('/me/photo', methods=['DELETE'])
+@jwt_required()
+def delete_user_photo():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'Usuario no encontrado'}), 404
+    user.profile_photo = None
+    db.session.commit()
+    return jsonify({'message': 'Foto eliminada', 'user': user.to_dict()}), 200
+
