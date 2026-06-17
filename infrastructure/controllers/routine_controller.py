@@ -28,7 +28,7 @@ def create_routine():
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
     trainer_id = int(get_jwt_identity())
     data = request.get_json()
-    if not all(k in data for k in ['user_id', 'date', 'name']):
+    if not all(k in data for k in ['user_id', 'name']):
         return jsonify({'error': 'Faltan campos requeridos'}), 400
     result, status = CreateRoutineUseCase().execute(trainer_id, data)
     return jsonify(result), status
