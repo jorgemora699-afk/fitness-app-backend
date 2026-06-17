@@ -16,7 +16,7 @@ class GetAssignedWorkoutsForUserUseCase:
         workouts = AssignedWorkout.query.filter_by(
             user_id=user_id
         ).order_by(
-            AssignedWorkout.assigned_date.desc()
+            AssignedWorkout.created_at.desc()
         ).all()
 
         return {
@@ -40,7 +40,7 @@ class GetMyAssignedWorkoutsUseCase:
         workouts = AssignedWorkout.query.filter_by(
             user_id=user_id
         ).order_by(
-            AssignedWorkout.assigned_date.desc()
+            AssignedWorkout.created_at.desc()
         ).all()
 
         return {
