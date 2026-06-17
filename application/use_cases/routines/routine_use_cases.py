@@ -2,6 +2,7 @@ from domain.entities.routine import Routine, Exercise
 from domain.entities.user import User
 from infrastructure.database.db import db
 from domain.entities.routine_template import AssignedWorkout, ExerciseLog
+from domain.entities.WorkoutSession import SessionExerciseLog
 
 class CreateRoutineUseCase:
     def execute(self, trainer_id, data):
@@ -97,18 +98,39 @@ class UpdateExerciseAsTrainerUseCase:
 
 class DeleteRoutineUseCase:
     def execute(self, routine_id, trainer_id):
+
         routine = Routine.query.filter_by(
             id=routine_id,
             trainer_id=trainer_id
         ).first()
+
         if not routine:
             return {'error': 'Rutina no encontrada'}, 404
-        
 
-        Exercise.query.filter_by(routine_id=routine_id).delete(synchronize_session=False)
+        # Validar si algún ejercicio tiene registros
+        for exercise in routine.exercises:
+
+            has_logs = SessionExerciseLog.query.filter_by(
+                exercise_id=exercise.id
+            ).first()
+
+            if has_logs:
+                return {
+                    'error': 'No se puede eliminar esta rutina porque ya tiene sesiones registradas'
+                }, 400
+
+        # Eliminar ejercicios
+        for exercise in routine.exercises:
+            db.session.delete(exercise)
+
+        # Eliminar rutina
         db.session.delete(routine)
+
         db.session.commit()
-        return {'message': 'Rutina eliminada'}, 200
+
+        return {
+            'message': 'Rutina eliminada'
+        }, 200
 
 
 class UpdateRoutineUseCase:
@@ -162,6 +184,15 @@ class DeleteExerciseUseCase:
         if not routine:
             return {'error': 'No autorizado'}, 403
 
+
+        log = SessionExerciseLog.query.filter_by(
+            exercise_id=exercise.id
+        ).first()
+
+        if log:
+            return {
+                'error': 'No se puede eliminar este ejercicio porque ya tiene registros de entrenamiento asociados'
+            }, 400
         db.session.delete(exercise)
         db.session.commit()
         return {'message': 'Ejercicio eliminado'}, 200
