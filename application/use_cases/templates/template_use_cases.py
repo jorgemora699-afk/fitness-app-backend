@@ -1,5 +1,6 @@
 from domain.entities.routine_template import RoutineTemplate, TemplateExercise, AssignedWorkout
 from domain.entities.user import User
+from domain.entities.routine import Routine, Exercise
 from infrastructure.database.db import db
 from datetime import datetime
 
@@ -100,6 +101,7 @@ class AssignTemplateToUserUseCase:
             id=template_id,
             trainer_id=trainer_id
         ).first()
+
         if not template:
             return {'error': 'Plantilla no encontrada'}, 404
 
@@ -120,11 +122,23 @@ class AssignTemplateToUserUseCase:
         created = []
 
         for user_id in user_ids:
+
             for date_str in dates:
+
                 try:
-                    assigned_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    assigned_date = datetime.strptime(
+                        date_str,
+                        '%Y-%m-%d'
+                    ).date()
+
                 except ValueError:
-                    return {'error': f'Fecha inválida: {date_str}'}, 400
+                    return {
+                        'error': f'Fecha inválida: {date_str}'
+                    }, 400
+
+                # ----------------------------------
+                # AssignedWorkout
+                # ----------------------------------
 
                 assigned = AssignedWorkout(
                     user_id=user_id,
@@ -132,7 +146,40 @@ class AssignTemplateToUserUseCase:
                     assigned_date=assigned_date,
                     status='pending'
                 )
+
                 db.session.add(assigned)
+
+                # ----------------------------------
+                # Routine
+                # ----------------------------------
+
+                routine = Routine(
+                    user_id=user_id,
+                    trainer_id=trainer_id,
+                    name=template.name,
+                    notes=template.description
+                )
+
+                db.session.add(routine)
+                db.session.flush()
+
+                # ----------------------------------
+                # Exercises
+                # ----------------------------------
+
+                for ex in template.exercises:
+
+                    exercise = Exercise(
+                        routine_id=routine.id,
+                        name=ex.name,
+                        sets=ex.sets,
+                        reps=ex.reps,
+                        weight=ex.weight,
+                        notes=ex.notes
+                    )
+
+                    db.session.add(exercise)
+
                 created.append(assigned)
 
         db.session.commit()
