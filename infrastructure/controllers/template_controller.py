@@ -76,7 +76,7 @@ def assign_template(template_id):
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
     trainer_id = int(get_jwt_identity())
     data = request.get_json()
-    if not data.get('user_ids') or not data.get('dates'):
-        return jsonify({'error': 'Se requieren user_ids y dates'}), 400
+    if not data.get('user_ids'):
+        return jsonify({'error': 'Se requieren user_ids'}), 400
     result, status = AssignTemplateToUserUseCase().execute(template_id, trainer_id, data)
     return jsonify(result), status

@@ -106,10 +106,9 @@ class AssignTemplateToUserUseCase:
             return {'error': 'Plantilla no encontrada'}, 404
 
         user_ids = data.get('user_ids', [])
-        dates = data.get('dates', [])
 
-        if not user_ids or not dates:
-            return {'error': 'Se requieren user_ids y dates'}, 400
+        if not user_ids:
+            return {'error': 'Se requieren user_ids'}, 400
 
         users = User.query.filter(
             User.id.in_(user_ids),
@@ -123,17 +122,15 @@ class AssignTemplateToUserUseCase:
 
         for user_id in user_ids:
 
-            for date_str in dates:
+                existing = AssignedWorkout.query.filter_by(
+                    user_id=user_id,
+                    template_id=template.id,
+                    status='pending'
+                ).first()
 
-                try:
-                    assigned_date = datetime.strptime(
-                        date_str,
-                        '%Y-%m-%d'
-                    ).date()
-
-                except ValueError:
+                if existing:
                     return {
-                        'error': f'Fecha inválida: {date_str}'
+                        'error': f'La plantilla "{template.name}" ya está asignada a este usuario'
                     }, 400
 
                 # ----------------------------------
@@ -143,7 +140,6 @@ class AssignTemplateToUserUseCase:
                 assigned = AssignedWorkout(
                     user_id=user_id,
                     template_id=template.id,
-                    assigned_date=assigned_date,
                     status='pending'
                 )
 
