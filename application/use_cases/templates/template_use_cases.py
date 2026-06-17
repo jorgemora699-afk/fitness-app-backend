@@ -119,7 +119,6 @@ class AssignTemplateToUserUseCase:
             return {'error': 'Uno o más usuarios no encontrados'}, 404
 
         created = []
-        skipped = []
 
         for user_id in user_ids:
 
@@ -130,17 +129,9 @@ class AssignTemplateToUserUseCase:
                 ).first()
 
                 if existing:
-
-                    user = next(
-                        (u for u in users if u.id == user_id),
-                        None
-                    )
-
-                    skipped.append(
-                        f"{user.name} {user.last_name}"
-                    )
-
-                    continue
+                    return {
+                        'error': f'La plantilla "{template.name}" ya está asignada a este usuario'
+                    }, 400
 
                 # ----------------------------------
                 # AssignedWorkout
@@ -189,14 +180,7 @@ class AssignTemplateToUserUseCase:
 
         db.session.commit()
 
-        message = f'Asignadas: {len(created)}'
-
-        if skipped:
-            message += f'\nOmitidas: {", ".join(skipped)}'
-
         return {
-            'message': message,
-            'assigned_count': len(created),
-            'skipped_users': skipped,
+            'message': f'Plantilla asignada correctamente ({len(created)} registros creados)',
             'assigned_workouts': [a.to_dict() for a in created]
         }, 201
