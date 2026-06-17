@@ -4,6 +4,8 @@ from domain.entities.user import User
 from infrastructure.database.db import db
 from datetime import date
 from sqlalchemy import func
+from domain.entities.WorkoutSession import WorkoutSession, SessionExerciseLog
+from domain.entities.routine import Exercise
 
 class AddBodyRecordUseCase:
     def execute(self, user_id, data):
@@ -68,28 +70,36 @@ class GetBodyProgressUseCase:
 
 class GetExerciseProgressUseCase:
     def execute(self, user_id, exercise_name):
-        routines = Routine.query.filter_by(user_id=user_id).order_by(
-            Routine.created_at.asc()
-        ).all()
+
+        logs = (
+            db.session.query(SessionExerciseLog, WorkoutSession, Exercise)
+            .join(WorkoutSession, SessionExerciseLog.session_id == WorkoutSession.id)
+            .join(Exercise, SessionExerciseLog.exercise_id == Exercise.id)
+            .filter(
+                WorkoutSession.user_id == user_id,
+                Exercise.name.ilike(f'%{exercise_name}%')
+            )
+            .order_by(WorkoutSession.started_at.asc())
+            .all()
+        )
 
         progress = []
-        for routine in routines:
-            exercises = Exercise.query.filter(
-                Exercise.routine_id == routine.id,
-                Exercise.name.ilike(f'%{exercise_name}%')
-            ).all()
-
-            for ex in exercises:
-                if ex.weight or ex.reps:
-                    volume = (ex.sets or 0) * (ex.reps or 0) * (ex.weight or 0)
-                    progress.append({
-                        'date': routine.created_at.isoformat(),
-                        'exercise': ex.to_dict(),
-                        'volume': round(volume, 2)
-                    })
+        for log, session, exercise in logs:
+            if log.performed_weight or log.performed_reps:
+                volume = (log.performed_sets or 0) * (log.performed_reps or 0) * (log.performed_weight or 0)
+                progress.append({
+                    'date': session.started_at.isoformat() if session.started_at else session.created_at.isoformat(),
+                    'exercise': {
+                        'name': exercise.name,
+                        'sets': log.performed_sets,
+                        'reps': log.performed_reps,
+                        'weight': log.performed_weight,
+                        'notes': log.notes
+                    },
+                })
 
         if not progress:
-            return {'error': f'No hay datos para el ejercicio: {exercise_name}'}, 404
+            return {'error': f'No hay datos registrados para el ejercicio: {exercise_name}'}, 404
 
         weights = [p['exercise']['weight'] for p in progress if p['exercise']['weight']]
         summary = {

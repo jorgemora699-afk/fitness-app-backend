@@ -40,10 +40,24 @@ class GetRoutinesByUserUseCase:
         if not user:
             return {'error': 'Usuario no encontrado'}, 404
 
-        routines = Routine.query.filter_by(user_id=user_id).order_by(
+        active_routines = Routine.query.filter_by(
+            user_id=user_id,
+            is_archived=False
+        ).order_by(
             Routine.created_at.desc()
         ).all()
-        return {'routines': [r.to_dict() for r in routines]}, 200
+
+        archived_routines = Routine.query.filter_by(
+            user_id=user_id,
+            is_archived=True
+        ).order_by(
+            Routine.created_at.desc()
+        ).all()
+
+        return {
+            'active_routines': [r.to_dict() for r in active_routines],
+            'archived_routines': [r.to_dict() for r in archived_routines]
+        }, 200
 
 
 class GetRoutineByDateUseCase:
@@ -297,4 +311,41 @@ class GetWorkoutHistoryUseCase:
 
         return {
             "history": history
+        }, 200
+    
+class ArchiveRoutineUseCase:
+    def execute(self, routine_id, trainer_id):
+        routine = Routine.query.filter_by(
+            id=routine_id,
+            trainer_id=trainer_id
+        ).first()
+
+        if not routine:
+            return {'error': 'Rutina no encontrada'}, 404
+
+        routine.is_archived = True
+
+        db.session.commit()
+
+        return {
+            'message': 'Rutina archivada'
+        }, 200
+
+
+class RestoreRoutineUseCase:
+    def execute(self, routine_id, trainer_id):
+        routine = Routine.query.filter_by(
+            id=routine_id,
+            trainer_id=trainer_id
+        ).first()
+
+        if not routine:
+            return {'error': 'Rutina no encontrada'}, 404
+
+        routine.is_archived = False
+
+        db.session.commit()
+
+        return {
+            'message': 'Rutina restaurada'
         }, 200

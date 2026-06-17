@@ -9,6 +9,11 @@ class Routine(db.Model):
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainers.id'), nullable=False)
     name = db.Column(db.String(150), nullable=False)
     notes = db.Column(db.Text, nullable=True)
+    is_archived = db.Column(
+        db.Boolean,
+        default=False,
+        nullable=False
+    )
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     exercises = db.relationship('Exercise', backref='routine', lazy=True, cascade='all, delete-orphan')
@@ -20,6 +25,7 @@ class Routine(db.Model):
             'trainer_id': self.trainer_id,
             'name': self.name,
             'notes': self.notes,
+            'is_archived': self.is_archived,
             'exercises': [e.to_dict() for e in self.exercises],
             'created_at': self.created_at.isoformat()
         }

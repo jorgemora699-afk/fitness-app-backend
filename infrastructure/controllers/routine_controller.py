@@ -12,7 +12,9 @@ from application.use_cases.routines.routine_use_cases import (
     DeleteExerciseUseCase,
     CopyRoutineToUserUseCase,
     LogExerciseUseCase,
-    GetWorkoutHistoryUseCase
+    GetWorkoutHistoryUseCase,
+    ArchiveRoutineUseCase,
+    RestoreRoutineUseCase
 )
 
 routine_bp = Blueprint('routines', __name__, url_prefix='/api/routines')
@@ -130,6 +132,42 @@ def update_routine(routine_id):
     trainer_id = int(get_jwt_identity())
     data = request.get_json()
     result, status = UpdateRoutineUseCase().execute(routine_id, trainer_id, data)
+    return jsonify(result), status
+
+@routine_bp.route('/<int:routine_id>/archive', methods=['PUT'])
+@jwt_required()
+def archive_routine(routine_id):
+
+    if get_role() != 'trainer':
+        return jsonify({
+            'error': 'Acceso solo para entrenadores'
+        }), 403
+
+    trainer_id = int(get_jwt_identity())
+
+    result, status = ArchiveRoutineUseCase().execute(
+        routine_id,
+        trainer_id
+    )
+
+    return jsonify(result), status
+
+@routine_bp.route('/<int:routine_id>/restore', methods=['PUT'])
+@jwt_required()
+def restore_routine(routine_id):
+
+    if get_role() != 'trainer':
+        return jsonify({
+            'error': 'Acceso solo para entrenadores'
+        }), 403
+
+    trainer_id = int(get_jwt_identity())
+
+    result, status = RestoreRoutineUseCase().execute(
+        routine_id,
+        trainer_id
+    )
+
     return jsonify(result), status
 
 # ── Entrenador: agregar ejercicio a rutina existente ──
