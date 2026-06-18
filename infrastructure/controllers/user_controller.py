@@ -35,8 +35,9 @@ def get_my_users():
     error = trainer_required()
     if error: return error
     trainer_id = int(get_jwt_identity())
-    result, status = GetMyUsersUseCase().execute(trainer_id)
-    return jsonify(result), status
+    status = request.args.get('status')  # 'approved', 'pending', 'rejected' o None
+    result, status_code = GetMyUsersUseCase().execute(trainer_id, status)
+    return jsonify(result), status_code
 
 # ── Entrenador: ver un usuario específico ──
 @user_bp.route('/<int:user_id>', methods=['GET'])

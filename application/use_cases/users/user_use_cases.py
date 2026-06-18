@@ -4,26 +4,13 @@ from infrastructure.database.db import db
 from datetime import date
 
 class GetMyUsersUseCase:
-    def execute(self, trainer_id):
+    def execute(self, trainer_id, status=None):
+        query = User.query.filter_by(trainer_id=trainer_id)
 
-        users = User.query.filter_by(
-            trainer_id=trainer_id
-        ).all()
+        if status:
+            query = query.filter_by(trainer_status=status)
 
-        pending = []
-        approved = []
-        rejected = []
-
-        for user in users:
-
-            if user.trainer_status == 'pending':
-                pending.append(user.to_dict())
-
-            elif user.trainer_status == 'approved':
-                approved.append(user.to_dict())
-
-            elif user.trainer_status == 'rejected':
-                rejected.append(user.to_dict())
+        users = query.all()
 
         return {
             'users': [u.to_dict() for u in users]
