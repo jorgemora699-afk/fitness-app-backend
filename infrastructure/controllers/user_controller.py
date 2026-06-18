@@ -7,7 +7,9 @@ from application.use_cases.users.user_use_cases import (
     AssignTrainerUseCase,
     GetUserProfileUseCase,
     ChangePasswordUseCase,
-    SavePushTokenUseCase
+    SavePushTokenUseCase,
+    ApproveUserUseCase,
+    RejectUserUseCase
 )
 from domain.entities.user import User
 from infrastructure.database.db import db
@@ -137,3 +139,36 @@ def delete_user_photo():
     db.session.commit()
     return jsonify({'message': 'Foto eliminada', 'user': user.to_dict()}), 200
 
+@user_bp.route('/<int:user_id>/approve', methods=['PUT'])
+@jwt_required()
+def approve_user(user_id):
+
+    error = trainer_required()
+    if error:
+        return error
+
+    trainer_id = int(get_jwt_identity())
+
+    result, status = ApproveUserUseCase().execute(
+        user_id,
+        trainer_id
+    )
+
+    return jsonify(result), status
+
+@user_bp.route('/<int:user_id>/reject', methods=['PUT'])
+@jwt_required()
+def reject_user(user_id):
+
+    error = trainer_required()
+    if error:
+        return error
+
+    trainer_id = int(get_jwt_identity())
+
+    result, status = RejectUserUseCase().execute(
+        user_id,
+        trainer_id
+    )
+
+    return jsonify(result), status

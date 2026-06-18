@@ -5,8 +5,70 @@ from datetime import date
 
 class GetMyUsersUseCase:
     def execute(self, trainer_id):
-        users = User.query.filter_by(trainer_id=trainer_id).all()
-        return {'users': [u.to_dict() for u in users]}, 200
+
+        users = User.query.filter_by(
+            trainer_id=trainer_id
+        ).all()
+
+        pending = []
+        approved = []
+        rejected = []
+
+        for user in users:
+
+            if user.trainer_status == 'pending':
+                pending.append(user.to_dict())
+
+            elif user.trainer_status == 'approved':
+                approved.append(user.to_dict())
+
+            elif user.trainer_status == 'rejected':
+                rejected.append(user.to_dict())
+
+        return {
+            'pending_users': pending,
+            'approved_users': approved,
+            'rejected_users': rejected
+        }, 200
+    
+class ApproveUserUseCase:
+    def execute(self, user_id, trainer_id):
+
+        user = User.query.filter_by(
+            id=user_id,
+            trainer_id=trainer_id
+        ).first()
+
+        if not user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        user.trainer_status = 'approved'
+
+        db.session.commit()
+
+        return {
+            'message': 'Usuario aprobado correctamente',
+            'user': user.to_dict()
+        }, 200
+
+class RejectUserUseCase:
+    def execute(self, user_id, trainer_id):
+
+        user = User.query.filter_by(
+            id=user_id,
+            trainer_id=trainer_id
+        ).first()
+
+        if not user:
+            return {'error': 'Usuario no encontrado'}, 404
+
+        user.trainer_status = 'rejected'
+
+        db.session.commit()
+
+        return {
+            'message': 'Usuario rechazado'
+        }, 200
 
 
 class GetUserByIdUseCase:

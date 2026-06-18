@@ -30,7 +30,8 @@ class RegisterUserUseCase:
             weight=data.get('weight'),
             height=data.get('height'),
             goal=data.get('goal'),
-            trainer_id=trainer.id  # asignar automáticamente
+            trainer_id=trainer.id , # asignar automáticamente
+            trainer_status='pending'
         )
         db.session.add(user)
         db.session.commit()
@@ -40,14 +41,28 @@ class RegisterUserUseCase:
 class LoginUserUseCase:
     def execute(self, email, password):
         user = User.query.filter_by(email=email).first()
+
         if not user:
             return {'error': 'Credenciales inválidas'}, 401
 
         if not check_password_hash(user.password_hash, password):
             return {'error': 'Credenciales inválidas'}, 401
 
-        # Verificar membresía activa (sin bloquear el login)
+        # Usuario pendiente de aprobación
+        if user.trainer_status == 'pending':
+            return {
+                'error': 'Tu cuenta está pendiente de aprobación por parte del entrenador'
+            }, 403
+
+        # Usuario rechazado
+        if user.trainer_status == 'rejected':
+            return {
+                'error': 'Tu solicitud fue rechazada por el entrenador'
+            }, 403
+
+        # Verificar membresía activa (sin bloquear login)
         today = date.today()
+
         active_membership = Membership.query.filter_by(
             user_id=user.id,
             is_paid=True
@@ -59,7 +74,6 @@ class LoginUserUseCase:
             'user': user.to_dict(),
             'membership': active_membership.to_dict() if active_membership else None
         }, 200
-
 
 class LoginTrainerUseCase:
     def execute(self, email, password):
