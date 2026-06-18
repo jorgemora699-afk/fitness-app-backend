@@ -38,7 +38,6 @@ class ApproveUserUseCase:
 
 class RejectUserUseCase:
     def execute(self, user_id, trainer_id):
-
         user = User.query.filter_by(
             id=user_id,
             trainer_id=trainer_id
@@ -47,13 +46,13 @@ class RejectUserUseCase:
         if not user:
             return {'error': 'Usuario no encontrado'}, 404
 
-        user.trainer_status = 'rejected'
+        if user.trainer_status != 'pending':
+            return {'error': 'Solo se pueden rechazar solicitudes pendientes'}, 400
 
+        db.session.delete(user)
         db.session.commit()
 
-        return {
-            'message': 'Usuario rechazado'
-        }, 200
+        return {'message': 'Solicitud rechazada y eliminada'}, 200
 
 
 class GetUserByIdUseCase:
