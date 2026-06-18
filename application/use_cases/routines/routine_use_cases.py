@@ -54,9 +54,9 @@ class GetRoutinesByUserUseCase:
             Routine.created_at.desc()
         ).all()
 
+        all_routines = active_routines + archived_routines
         return {
-            'active_routines': [r.to_dict() for r in active_routines],
-            'archived_routines': [r.to_dict() for r in archived_routines]
+            'routines': [r.to_dict() for r in all_routines]
         }, 200
 
 
