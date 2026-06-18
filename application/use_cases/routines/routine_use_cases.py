@@ -304,7 +304,7 @@ class GetWorkoutHistoryUseCase:
                 })
 
             history.append({
-                "date": w.assigned_date.isoformat(),
+                "date": w.created_at.isoformat(),
                 "workout": w.template.name if w.template else None,
                 "status": w.status,
                 "exercises": day_exercises
