@@ -42,7 +42,8 @@ def get_routines_by_user(user_id):
     if get_role() != 'trainer':
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
     trainer_id = int(get_jwt_identity())
-    result, status = GetRoutinesByUserUseCase().execute(user_id, trainer_id)
+    active_only = request.args.get('active_only', 'false').lower() == 'true'
+    result, status = GetRoutinesByUserUseCase().execute(user_id, trainer_id, active_only)
     return jsonify(result), status
 
 @routine_bp.route('/user/<int:user_id>/history', methods=['GET'])
