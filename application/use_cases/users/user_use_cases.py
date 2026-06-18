@@ -26,9 +26,7 @@ class GetMyUsersUseCase:
                 rejected.append(user.to_dict())
 
         return {
-            'pending_users': pending,
-            'approved_users': approved,
-            'rejected_users': rejected
+            'users': [u.to_dict() for u in users]
         }, 200
     
 class ApproveUserUseCase:
