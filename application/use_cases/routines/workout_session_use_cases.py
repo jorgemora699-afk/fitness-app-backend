@@ -58,18 +58,41 @@ class StartWorkoutSessionUseCase:
 
 
 class LogExerciseInSessionUseCase:
-    def execute(self, session_id, trainer_id, data):
+    def execute(self, session_id, editor_role, editor_id, data):
+        from datetime import date, timedelta
 
-        session = WorkoutSession.query.filter_by(
-            id=session_id,
-            trainer_id=trainer_id
-        ).first()
+        if editor_role == 'trainer':
+            session = WorkoutSession.query.filter_by(
+                id=session_id,
+                trainer_id=editor_id
+            ).first()
+        else:
+            session = WorkoutSession.query.filter_by(
+                id=session_id,
+                user_id=editor_id
+            ).first()
 
         if not session:
             return {'error': 'Sesión no encontrada'}, 404
 
         if session.status == 'completed':
             return {'error': 'Esta sesión ya fue completada'}, 400
+
+        # Validar ventana de tiempo basada en la fecha del schedule
+        schedule = Schedule.query.get(session.schedule_id)
+        if schedule:
+            today = date.today()
+            schedule_date = schedule.date
+
+            if today < schedule_date:
+                return {'error': 'No puedes registrar antes del día del entrenamiento'}, 403
+
+            if editor_role == 'user':
+                if today > schedule_date + timedelta(days=2):
+                    return {'error': 'El plazo para registrar tu entrenamiento ha vencido (48 horas)'}, 403
+            elif editor_role == 'trainer':
+                if today > schedule_date + timedelta(days=7):
+                    return {'error': 'El plazo para registrar este entrenamiento ha vencido (7 días)'}, 403
 
         exercise = Exercise.query.get(data.get('exercise_id'))
         if not exercise:

@@ -46,18 +46,7 @@ def log_exercise(session_id):
     if not data.get('exercise_id'):
         return jsonify({'error': 'exercise_id es requerido'}), 400
 
-    # El log siempre lo valida el trainer_id en el use case
-    # Si es usuario, buscamos su trainer_id
-    if role == 'user':
-        from domain.entities.user import User
-        user = User.query.get(identity)
-        if not user:
-            return jsonify({'error': 'Usuario no encontrado'}), 404
-        trainer_id = user.trainer_id
-    else:
-        trainer_id = identity
-
-    result, status = LogExerciseInSessionUseCase().execute(session_id, trainer_id, data)
+    result, status = LogExerciseInSessionUseCase().execute(session_id, role, identity, data)
     return jsonify(result), status
 
 
