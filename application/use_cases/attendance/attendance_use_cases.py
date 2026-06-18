@@ -116,15 +116,17 @@ class GetInactiveUsersUseCase:
 
                     if days_absent:
                         message = (
-                            f"Hola {user.name} 👋, te extrañamos en el gimnasio. "
-                            f"Llevas {days_absent} día(s) sin entrenar. "
-                            f"¡Recuerda que la constancia es la clave del éxito! 💪 "
-                            f"¿Cuándo volvemos?"
+                            f"Hola {user.name}, espero que estés bien. "
+                            f"Quería hacerte un seguimiento ya que han pasado {days_absent} día(s) "
+                            f"desde tu último entrenamiento registrado. "
+                            f"Si necesitas reprogramar tu sesión o ajustar tu plan, con gusto te ayudo. "
+                            f"Quedo atento."
                         )
                     else:
                         message = (
-                            f"Hola {user.name} 👋, vemos que aún no has comenzado "
-                            f"a entrenar. ¡Te esperamos para empezar juntos! 💪"
+                            f"Hola {user.name}, te escribo para darle seguimiento al inicio de tu plan de entrenamiento. "
+                            f"Cuando tengas disponibilidad, podemos coordinar tu primera sesión. "
+                            f"Quedo atento."
                         )
 
                     encoded = urllib.parse.quote(message)

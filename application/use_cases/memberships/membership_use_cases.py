@@ -74,6 +74,8 @@ class GetActiveMembershipUseCase:
 
 class GetExpiringMembershipsUseCase:
     def execute(self, trainer_id):
+        import urllib.parse
+
         today = date.today()
         in_5_days = today + timedelta(days=5)
 
@@ -90,13 +92,31 @@ class GetExpiringMembershipsUseCase:
         result = []
         for m in expiring:
             user = User.query.get(m.user_id)
+            days_left = (m.end_date - today).days
+
+            whatsapp_url = None
+            if user and user.phone:
+                phone = ''.join(filter(str.isdigit, user.phone))
+                if len(phone) == 10:
+                    phone = '57' + phone
+
+                message = (
+                    f"Hola {user.name}, te escribo para recordarte que tu membresía "
+                    f"vence en {days_left} día(s). "
+                    f"Para evitar interrupciones en tu plan de entrenamiento, "
+                    f"te invito a renovarla a tiempo. Quedo atento para coordinar el pago."
+                )
+                encoded = urllib.parse.quote(message)
+                whatsapp_url = f"https://wa.me/{phone}?text={encoded}"
+
             result.append({
                 'membership': m.to_dict(),
-                'user': user.to_dict()
+                'user': user.to_dict(),
+                'days_left': days_left,
+                'whatsapp_url': whatsapp_url
             })
 
-        return {'expiring_memberships': result}, 200
-
+        return {'expiring': result}, 200
 
 class GetMonthlyFinancesUseCase:
     def execute(self, trainer_id, year, month):
