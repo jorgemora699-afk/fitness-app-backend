@@ -25,6 +25,12 @@ class Schedule(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
+        routine_name = None
+        if self.routine_id:
+            from domain.entities.routine import Routine
+            routine = Routine.query.get(self.routine_id)
+            routine_name = routine.name if routine else None
+
         return {
             'id': self.id,
             'trainer_id': self.trainer_id,
@@ -37,6 +43,7 @@ class Schedule(db.Model):
             'cancel_reason': self.cancel_reason,
             'cancelled_by': self.cancelled_by,
             'routine_id': self.routine_id,
+            'routine_name': routine_name,
             'notified': self.notified,
             'user_response': self.user_response,
             'attended': self.attended,
