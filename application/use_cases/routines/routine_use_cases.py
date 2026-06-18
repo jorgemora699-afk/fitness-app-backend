@@ -35,7 +35,7 @@ class CreateRoutineUseCase:
 
 
 class GetRoutinesByUserUseCase:
-    def execute(self, user_id, trainer_id):
+    def execute(self, user_id, trainer_id, active_only=False):
         user = User.query.filter_by(id=user_id, trainer_id=trainer_id).first()
         if not user:
             return {'error': 'Usuario no encontrado'}, 404
@@ -47,6 +47,9 @@ class GetRoutinesByUserUseCase:
             Routine.created_at.desc()
         ).all()
 
+        if active_only:
+            return {'routines': [r.to_dict() for r in active_routines]}, 200
+
         archived_routines = Routine.query.filter_by(
             user_id=user_id,
             is_archived=True
@@ -55,9 +58,7 @@ class GetRoutinesByUserUseCase:
         ).all()
 
         all_routines = active_routines + archived_routines
-        return {
-            'routines': [r.to_dict() for r in all_routines]
-        }, 200
+        return {'routines': [r.to_dict() for r in all_routines]}, 200
 
 
 class GetRoutineByDateUseCase:
