@@ -95,7 +95,7 @@ class GetInactiveUsersUseCase:
         today = date.today()
         threshold = today - timedelta(days=days)
 
-        users = User.query.filter_by(trainer_id=trainer_id).all()
+        users = User.query.filter_by(trainer_id=trainer_id,trainer_status='approved').all()
 
         inactive = []
         for user in users:

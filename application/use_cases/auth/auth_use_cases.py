@@ -51,13 +51,13 @@ class LoginUserUseCase:
         # Usuario pendiente de aprobación
         if user.trainer_status == 'pending':
             return {
-                'error': 'Tu cuenta está pendiente de aprobación por parte del entrenador'
+                'Info': 'Tu cuenta está pendiente de aprobación por parte del entrenador'
             }, 403
 
         # Usuario rechazado
         if user.trainer_status == 'rejected':
             return {
-                'error': 'Tu solicitud fue rechazada por el entrenador'
+                'Info': 'Tu solicitud fue rechazada por el entrenador'
             }, 403
 
         # Verificar membresía activa (sin bloquear login)
