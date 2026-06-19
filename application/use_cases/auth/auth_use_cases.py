@@ -209,3 +209,24 @@ class ResetPasswordTrainerUseCase:
         db.session.commit()
 
         return {'message': 'Contraseña actualizada correctamente'}, 200
+    
+
+class ChangePasswordTrainerUseCase:
+    def execute(self, trainer_id, data):
+        from werkzeug.security import check_password_hash, generate_password_hash
+        trainer = Trainer.query.get(trainer_id)
+        if not trainer:
+            return {'error': 'Entrenador no encontrado'}, 404
+
+        if not check_password_hash(trainer.password_hash, data.get('current_password', '')):
+            return {'error': 'Contraseña actual incorrecta'}, 400
+
+        if not data.get('new_password'):
+            return {'error': 'Nueva contraseña requerida'}, 400
+
+        if len(data['new_password']) < 6:
+            return {'error': 'La contraseña debe tener al menos 6 caracteres'}, 400
+
+        trainer.password_hash = generate_password_hash(data['new_password'])
+        db.session.commit()
+        return {'message': 'Contraseña actualizada correctamente'}, 200

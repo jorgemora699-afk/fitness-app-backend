@@ -7,7 +7,8 @@ from application.use_cases.auth.auth_use_cases import (
     CreateTrainerUseCase, 
     ResetPasswordUseCase,
     SendResetCodeTrainerUseCase,
-    ResetPasswordTrainerUseCase
+    ResetPasswordTrainerUseCase,
+    ChangePasswordTrainerUseCase
 )
 from domain.entities.trainer import Trainer
 from infrastructure.database.db import db
@@ -144,3 +145,14 @@ def delete_trainer_photo():
     trainer.profile_photo = None
     db.session.commit()
     return jsonify({'message': 'Foto eliminada', 'trainer': trainer.to_dict()}), 200
+
+# ── Entrenador: cambiar contraseña desde perfil ──
+@auth_bp.route('/trainers/me/password', methods=['PUT'])
+@jwt_required()
+def change_trainer_password():
+    if get_jwt().get('role') != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+    trainer_id = int(get_jwt_identity())
+    data = request.get_json()
+    result, status = ChangePasswordTrainerUseCase().execute(trainer_id, data)
+    return jsonify(result), status
