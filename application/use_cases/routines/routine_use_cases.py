@@ -134,6 +134,15 @@ class DeleteRoutineUseCase:
                     'error': 'No se puede eliminar esta rutina porque ya tiene sesiones registradas'
                 }, 400
 
+        # Validar si hay entrenamientos programados con esta rutina
+        from domain.entities.schedule import Schedule
+        schedules_using = Schedule.query.filter_by(routine_id=routine_id).all()
+
+        if schedules_using:
+            return {
+                'error': 'No se puede eliminar esta rutina porque está asignada a uno o más entrenamientos programados. Quita la rutina de esos entrenamientos primero, o archívala en su lugar.'
+            }, 400
+
         # Eliminar ejercicios
         for exercise in routine.exercises:
             db.session.delete(exercise)
@@ -146,7 +155,7 @@ class DeleteRoutineUseCase:
         return {
             'message': 'Rutina eliminada'
         }, 200
-
+    
 
 class UpdateRoutineUseCase:
     def execute(self, routine_id, trainer_id, data):
