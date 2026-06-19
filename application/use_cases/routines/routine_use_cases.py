@@ -233,6 +233,16 @@ class CopyRoutineToUserUseCase:
         if not target_user:
             return {'error': 'Usuario no encontrado'}, 404
 
+        existing = Routine.query.filter_by(
+            user_id=target_user_id,
+            name=routine.name,
+            is_archived=False
+        ).first()
+        if existing:
+            return {
+                'error': f'{target_user.name} ya tiene una rutina activa con el nombre "{routine.name}"'
+            }, 400
+
         new_routine = Routine(
             user_id=target_user_id,
             trainer_id=trainer_id,
