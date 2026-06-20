@@ -164,3 +164,31 @@ class GetSubscriptionsSummaryUseCase:
             })
 
         return {'summary': result}, 200
+    
+class CreateTrainerAsAdminUseCase:
+    def execute(self, data):
+        from werkzeug.security import generate_password_hash
+
+        if not data.get('name') or not data.get('email') or not data.get('password'):
+            return {'error': 'Nombre, email y contraseña son requeridos'}, 400
+
+        existing = Trainer.query.filter_by(email=data['email']).first()
+        if existing:
+            return {'error': 'Ya existe un entrenador con ese correo'}, 400
+
+        if len(data['password']) < 6:
+            return {'error': 'La contraseña debe tener al menos 6 caracteres'}, 400
+
+        trainer = Trainer(
+            name=data['name'],
+            email=data['email'],
+            password_hash=generate_password_hash(data['password']),
+            phone=data.get('phone')
+        )
+        db.session.add(trainer)
+        db.session.commit()
+
+        return {
+            'message': 'Entrenador creado correctamente',
+            'trainer': trainer.to_dict()
+        }, 201

@@ -9,7 +9,8 @@ from application.use_cases.admin.admin_use_cases import (
     CreateSubscriptionUseCase,
     GetTrainerSubscriptionsUseCase,
     ConfirmPaymentUseCase,
-    GetSubscriptionsSummaryUseCase
+    GetSubscriptionsSummaryUseCase,
+    CreateTrainerAsAdminUseCase
 )
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/api/admin')
@@ -118,4 +119,14 @@ def confirm_payment(subscription_id):
     error = admin_required()
     if error: return error
     result, status = ConfirmPaymentUseCase().execute(subscription_id)
+    return jsonify(result), status
+
+# ── Admin: crear entrenador ──
+@admin_bp.route('/trainers', methods=['POST'])
+@jwt_required()
+def create_trainer():
+    error = admin_required()
+    if error: return error
+    data = request.get_json()
+    result, status = CreateTrainerAsAdminUseCase().execute(data)
     return jsonify(result), status
