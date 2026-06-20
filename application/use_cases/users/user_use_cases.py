@@ -69,6 +69,8 @@ class UpdateUserUseCase:
         if not user:
             return {'error': 'Usuario no encontrado'}, 404
 
+        weight_changed = 'weight' in data and data['weight'] != user.weight
+
         user.name = data.get('name', user.name)
         user.last_name = data.get('last_name', user.last_name)
         user.phone = data.get('phone', user.phone)
@@ -78,6 +80,28 @@ class UpdateUserUseCase:
         user.goal = data.get('goal', user.goal)
         user.body_fat = data.get('body_fat', user.body_fat)
         user.muscle_mass = data.get('muscle_mass', user.muscle_mass)
+
+        # Si el entrenador cambió el peso, registrar también en el historial
+        if weight_changed:
+            from domain.entities.body_record import BodyRecord
+            from datetime import date
+
+            today = date.today()
+            existing = BodyRecord.query.filter_by(
+                user_id=user_id,
+                weight=user.weight,
+                recorded_at=today
+            ).first()
+
+            if not existing:
+                record = BodyRecord(
+                    user_id=user_id,
+                    weight=user.weight,
+                    body_fat=user.body_fat,
+                    muscle_mass=user.muscle_mass,
+                    recorded_at=today
+                )
+                db.session.add(record)
 
         db.session.commit()
         return {'message': 'Usuario actualizado', 'user': user.to_dict()}, 200
