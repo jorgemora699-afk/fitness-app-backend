@@ -22,7 +22,6 @@ def check_trainer_subscription(app):
     def verify_subscription():
         from flask import request
         
-        # Solo verificar rutas del entrenador que no sean auth
         if not request.path.startswith('/api/') or request.path.startswith('/api/auth') or request.path.startswith('/api/admin'):
             return
         
@@ -33,6 +32,15 @@ def check_trainer_subscription(app):
                 return
             
             trainer_id = int(get_jwt_identity())
+            
+            from domain.entities.trainer import Trainer
+            trainer = Trainer.query.get(trainer_id)
+            
+            if not trainer or not trainer.is_active:
+                return jsonify({
+                    'error': 'Tu cuenta ha sido desactivada. Contacta al administrador.',
+                    'code': 'ACCOUNT_DEACTIVATED'
+                }), 403
             
             from domain.entities.trainer_subscription import TrainerSubscription
             today = date.today()
