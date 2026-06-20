@@ -23,16 +23,17 @@ class AddBodyRecordUseCase:
         if existing:
             return {'message': 'Registro ya existe', 'record': existing.to_dict()}, 200
 
+        user = User.query.get(user_id)
+
         record = BodyRecord(
             user_id=user_id,
             weight=data['weight'],
-            body_fat=data.get('body_fat'),
-            muscle_mass=data.get('muscle_mass'),
+            body_fat=data.get('body_fat') if data.get('body_fat') is not None else (user.body_fat if user else None),
+            muscle_mass=data.get('muscle_mass') if data.get('muscle_mass') is not None else (user.muscle_mass if user else None),
             recorded_at=date.fromisoformat(data['recorded_at']) if data.get('recorded_at') else date.today()
         )
         db.session.add(record)
         # Actualizar peso en el perfil del usuario
-        user = User.query.get(user_id)
         if user:
             user.weight = data['weight']
             if data.get('body_fat'):
