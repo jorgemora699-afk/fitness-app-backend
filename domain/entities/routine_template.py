@@ -33,6 +33,7 @@ class TemplateExercise(db.Model):
     reps = db.Column(db.Integer, nullable=True)
     weight = db.Column(db.Float, nullable=True)
     notes = db.Column(db.String(255), nullable=True)
+    video_url = db.Column(db.String(500),nullable=True)
 
     def to_dict(self):
         return {
@@ -42,7 +43,8 @@ class TemplateExercise(db.Model):
             'sets': self.sets,
             'reps': self.reps,
             'weight': self.weight,
-            'notes': self.notes
+            'notes': self.notes,
+            'video_url': self.video_url
         }
     
 class AssignedWorkout(db.Model):

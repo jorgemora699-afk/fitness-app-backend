@@ -41,6 +41,7 @@ class Exercise(db.Model):
     reps = db.Column(db.Integer, nullable=True)
     weight = db.Column(db.Float, nullable=True)
     notes = db.Column(db.String(255), nullable=True)
+    video_url = db.Column(db.String(500),nullable=True)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def to_dict(self):
@@ -52,5 +53,6 @@ class Exercise(db.Model):
             'reps': self.reps,
             'weight': self.weight,
             'notes': self.notes,
+            'video_url': self.video_url,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
