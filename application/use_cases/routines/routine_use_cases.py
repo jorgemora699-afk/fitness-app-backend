@@ -268,7 +268,8 @@ class CopyRoutineToUserUseCase:
                 sets=ex.sets,
                 reps=ex.reps,
                 weight=ex.weight,
-                notes=ex.notes
+                notes=ex.notes,
+                video_url=ex.video_url
             )
             db.session.add(new_exercise)
 
