@@ -16,6 +16,7 @@ from application.use_cases.routines.routine_use_cases import (
     ArchiveRoutineUseCase,
     RestoreRoutineUseCase
 )
+from infrastructure.database.db import db
 
 routine_bp = Blueprint('routines', __name__, url_prefix='/api/routines')
 
@@ -229,3 +230,70 @@ def get_my_exercise_names():
     names = list(set([e.name for e in exercises]))
     names.sort()
     return jsonify({'names': names}), 200
+
+
+@routine_bp.route('/exercise/<int:exercise_id>/video', methods=['POST'])
+@jwt_required()
+def upload_exercise_video(exercise_id):
+    claims = get_jwt()
+    if claims.get('role') != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+
+    from domain.entities.routine import Exercise
+    exercise = Exercise.query.get(exercise_id)
+    if not exercise:
+        return jsonify({'error': 'Ejercicio no encontrado'}), 404
+
+    if 'video' not in request.files:
+        return jsonify({'error': 'No se envió video'}), 400
+
+    file = request.files['video']
+
+    import cloudinary
+    import cloudinary.uploader
+    import os
+    cloudinary.config(
+        cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+        api_key=os.getenv('CLOUDINARY_API_KEY'),
+        api_secret=os.getenv('CLOUDINARY_API_SECRET')
+    )
+
+    upload = cloudinary.uploader.upload(
+        file,
+        resource_type='video',
+        folder='fitness/exercise_videos',
+        transformation=[
+            {'duration': 10},  # máximo 10 segundos
+            {'quality': 'auto'}
+        ]
+    )
+
+    exercise.video_url = upload.get('secure_url')
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Video subido exitosamente',
+        'video_url': exercise.video_url,
+        'exercise': exercise.to_dict()
+    }), 200
+
+
+@routine_bp.route('/exercise/<int:exercise_id>/video', methods=['DELETE'])
+@jwt_required()
+def delete_exercise_video(exercise_id):
+    claims = get_jwt()
+    if claims.get('role') != 'trainer':
+        return jsonify({'error': 'Acceso solo para entrenadores'}), 403
+
+    from domain.entities.routine import Exercise
+    exercise = Exercise.query.get(exercise_id)
+    if not exercise:
+        return jsonify({'error': 'Ejercicio no encontrado'}), 404
+
+    exercise.video_url = None
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Video eliminado',
+        'exercise': exercise.to_dict()
+    }), 200
