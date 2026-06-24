@@ -16,7 +16,7 @@ class Routine(db.Model):
     )
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    exercises = db.relationship('Exercise', backref='routine', lazy=True, cascade='all, delete-orphan')
+    exercises = db.relationship('Exercise', backref='routine', lazy=True, cascade='all, delete-orphan', order_by='Exercise.id')
 
     def to_dict(self):
         return {

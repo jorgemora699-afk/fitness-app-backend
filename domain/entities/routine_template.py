@@ -10,7 +10,7 @@ class RoutineTemplate(db.Model):
     description = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    exercises = db.relationship('TemplateExercise', backref='template', lazy=True, cascade='all, delete-orphan')
+    exercises = db.relationship('TemplateExercise', backref='template', lazy=True, cascade='all, delete-orphan', order_by='TemplateExercise.id')
 
     def to_dict(self):
         return {
