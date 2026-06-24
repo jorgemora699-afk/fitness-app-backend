@@ -88,7 +88,7 @@ def upload_template_exercise_video(exercise_id):
     if get_role() != 'trainer':
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
 
-    from domain.entities.routine import TemplateExercise
+    from domain.entities.routine_template import TemplateExercise
     from infrastructure.database.db import db
     exercise = TemplateExercise.query.get(exercise_id)
     if not exercise:
@@ -135,7 +135,7 @@ def delete_template_exercise_video(exercise_id):
     if get_role() != 'trainer':
         return jsonify({'error': 'Acceso solo para entrenadores'}), 403
 
-    from domain.entities.routine import TemplateExercise
+    from domain.entities.routine_template import TemplateExercise
     from infrastructure.database.db import db
     exercise = TemplateExercise.query.get(exercise_id)
     if not exercise:
