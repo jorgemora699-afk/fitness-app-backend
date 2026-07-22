@@ -38,7 +38,7 @@ class Exercise(db.Model):
     routine_id = db.Column(db.Integer, db.ForeignKey('routines.id'), nullable=False)
     name = db.Column(db.String(150), nullable=False)
     sets = db.Column(db.Integer, nullable=True)
-    reps = db.Column(db.Integer, nullable=True)
+    reps = db.Column(db.String(20), nullable=True)
     weight = db.Column(db.Float, nullable=True)
     notes = db.Column(db.String(255), nullable=True)
     video_url = db.Column(db.String(500),nullable=True)

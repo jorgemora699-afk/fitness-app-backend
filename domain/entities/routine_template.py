@@ -30,7 +30,7 @@ class TemplateExercise(db.Model):
     template_id = db.Column(db.Integer, db.ForeignKey('routine_templates.id'), nullable=False)
     name = db.Column(db.String(150), nullable=False)
     sets = db.Column(db.Integer, nullable=True)
-    reps = db.Column(db.Integer, nullable=True)
+    reps = db.Column(db.String(20), nullable=True)
     weight = db.Column(db.Float, nullable=True)
     notes = db.Column(db.String(255), nullable=True)
     video_url = db.Column(db.String(500),nullable=True)
@@ -77,7 +77,7 @@ class ExerciseLog(db.Model):
     assigned_workout_id = db.Column(db.Integer, db.ForeignKey('assigned_workouts.id'), nullable=False)
     exercise_id = db.Column(db.Integer, db.ForeignKey('template_exercises.id'), nullable=False)
     performed_sets = db.Column(db.Integer)
-    performed_reps = db.Column(db.Integer)
+    performed_reps = db.Column(db.String(20), nullable=True)
     performed_weight = db.Column(db.Float)
     performed_at = db.Column(db.DateTime, default=datetime.utcnow)
 

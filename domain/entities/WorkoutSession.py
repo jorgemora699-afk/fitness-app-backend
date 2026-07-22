@@ -41,7 +41,7 @@ class SessionExerciseLog(db.Model):
     exercise_id = db.Column(db.Integer, db.ForeignKey('exercises.id'), nullable=False)
 
     performed_sets = db.Column(db.Integer, nullable=True)
-    performed_reps = db.Column(db.Integer, nullable=True)
+    performed_reps = db.Column(db.String(20), nullable=True)
     performed_weight = db.Column(db.Float, nullable=True)
     notes = db.Column(db.String(255), nullable=True)
     logged_at = db.Column(db.DateTime, default=datetime.utcnow)
