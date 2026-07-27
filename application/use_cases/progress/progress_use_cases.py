@@ -7,6 +7,30 @@ from sqlalchemy import func
 from domain.entities.WorkoutSession import WorkoutSession, SessionExerciseLog
 from domain.entities.routine import Exercise
 
+
+def parse_reps(reps_value):
+    """
+    Convierte performed_reps (puede ser '12', '8-12', None, etc.) a un número
+    usable para cálculos. Si es un rango, retorna el promedio.
+    """
+    if not reps_value:
+        return 0
+
+    reps_str = str(reps_value).strip()
+
+    if '-' in reps_str:
+        try:
+            low, high = reps_str.split('-')
+            return (float(low.strip()) + float(high.strip())) / 2
+        except (ValueError, AttributeError):
+            return 0
+
+    try:
+        return float(reps_str)
+    except ValueError:
+        return 0
+
+
 class AddBodyRecordUseCase:
     def execute(self, user_id, data):
         from datetime import date
@@ -87,7 +111,11 @@ class GetExerciseProgressUseCase:
         progress = []
         for log, session, exercise in logs:
             if log.performed_weight or log.performed_reps:
-                volume = (log.performed_sets or 0) * (log.performed_reps or 0) * (log.performed_weight or 0)
+                sets = log.performed_sets or 0
+                reps = parse_reps(log.performed_reps)
+                weight = log.performed_weight or 0
+
+                volume = sets * reps * weight
                 progress.append({
                     'date': session.started_at.isoformat() if session.started_at else session.created_at.isoformat(),
                     'exercise': {
@@ -97,6 +125,7 @@ class GetExerciseProgressUseCase:
                         'weight': log.performed_weight,
                         'notes': log.notes
                     },
+                    'volume': volume
                 })
 
         if not progress:
@@ -177,7 +206,7 @@ class GetIMCUseCase:
             'weight': user.weight,
             'height': user.height
         }, 200
-    
+
 class DeleteBodyRecordUseCase:
     def execute(self, user_id, record_id):
         record = BodyRecord.query.filter_by(
