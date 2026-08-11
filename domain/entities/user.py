@@ -19,6 +19,8 @@ class User(db.Model):
     muscle_mass = db.Column(db.Float, nullable=True)  # % masa muscular
     profile_photo = db.Column(db.String(255), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
+    is_deleted = db.Column(db.Boolean, default=False)
+    deleted_at = db.Column(db.DateTime, nullable=True)
     trainer_id = db.Column(db.Integer, db.ForeignKey('trainers.id'), nullable=True)
     trainer_status = db.Column(db.String(20), nullable=False, default='pending')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -43,6 +45,7 @@ class User(db.Model):
             'muscle_mass': self.muscle_mass,
             'profile_photo': self.profile_photo,
             'is_active': self.is_active,
+            'is_deleted': self.is_deleted,
             'trainer_id': self.trainer_id,
             'trainer_status': self.trainer_status,
             'created_at': self.created_at.isoformat()

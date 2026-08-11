@@ -16,6 +16,8 @@ class Trainer(db.Model):
     phone = db.Column(db.String(20), nullable=True)
     trainer_code = db.Column(db.String(8), unique=True, nullable=False, default=generate_trainer_code)
     is_active = db.Column(db.Boolean, default=True)
+    is_deleted = db.Column(db.Boolean, default=False)
+    deleted_at = db.Column(db.DateTime, nullable=True)
     reset_code = db.Column(db.String(6), nullable=True)
     profile_photo = db.Column(db.String(255), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -31,6 +33,7 @@ class Trainer(db.Model):
             'phone': self.phone,
             'trainer_code': self.trainer_code,
             'is_active': self.is_active,
+            'is_deleted': self.is_deleted,
             'profile_photo': self.profile_photo,
             'created_at': self.created_at.isoformat()
         }

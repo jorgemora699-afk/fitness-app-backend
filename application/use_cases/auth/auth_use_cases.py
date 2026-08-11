@@ -45,6 +45,9 @@ class LoginUserUseCase:
         if not user:
             return {'error': 'Credenciales inválidas'}, 401
 
+        if user.is_deleted:
+            return {'error': 'Credenciales inválidas'}, 401
+
         if not check_password_hash(user.password_hash, password):
             return {'error': 'Credenciales inválidas'}, 401
 
@@ -79,6 +82,9 @@ class LoginTrainerUseCase:
     def execute(self, email, password):
         trainer = Trainer.query.filter_by(email=email).first()
         if not trainer:
+            return {'error': 'Credenciales inválidas'}, 401
+
+        if trainer.is_deleted:
             return {'error': 'Credenciales inválidas'}, 401
 
         if not check_password_hash(trainer.password_hash, password):

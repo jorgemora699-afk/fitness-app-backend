@@ -12,6 +12,7 @@ from infrastructure.controllers.note_controller import note_bp
 from infrastructure.controllers.assigned_workout_controller import assigned_workout_bp
 from infrastructure.controllers.workout_session_controller import session_bp
 from infrastructure.controllers.admin_controller import admin_bp
+from infrastructure.controllers.account_controller import account_bp
 
 from flask import jsonify
 from flask_jwt_extended import verify_jwt_in_request, get_jwt, get_jwt_identity
@@ -60,6 +61,7 @@ def check_trainer_subscription(app):
 
 def register_routes(app):
     app.register_blueprint(auth_bp)
+    app.register_blueprint(account_bp)
     app.register_blueprint(user_bp)
     app.register_blueprint(membership_bp)
     app.register_blueprint(routine_bp)
